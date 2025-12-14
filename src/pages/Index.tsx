@@ -107,7 +107,7 @@ const Index = () => {
         {desktopApps.map((app) => (
           <DesktopIcon key={app.id} icon={app.id === "contact" ? DiscordIcon : app.icon} label={app.name} onDoubleClick={() => handleOpenApp(app)} />
         ))}
-        <DesktopIcon icon={Bug} label="Virus" onDoubleClick={() => setShowVirus(true)} />
+        <DesktopIcon icon={Bug} label="Not a Virus" onDoubleClick={() => setShowVirus(true)} />
       </div>
 
       {windows.map((win) => (

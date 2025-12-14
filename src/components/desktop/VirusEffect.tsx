@@ -6,20 +6,20 @@ interface VirusEffectProps {
 }
 
 const hackerMessages = [
-  "YOU GOT HACKED",
-  "SYSTEM COMPROMISED",
-  "ACCESS GRANTED",
-  "DELETING FILES...",
-  "STEALING DATA...",
-  "VIRUS DETECTED",
-  "CRITICAL ERROR",
-  "SYSTEM FAILURE",
-  "NO ESCAPE",
-  "GAME OVER",
-  "0x00000DEAD",
-  "FATAL ERROR",
-  "MEMORY CORRUPTED",
-  "FIREWALL BYPASSED",
+  "NOT A VIRUS",
+  "TOTALLY SAFE",
+  "TRUST ME BRO",
+  "SYSTEM OPTIMIZED",
+  "FREE RAM BOOST",
+  "100% LEGIT",
+  "CRITICAL UPDATE",
+  "SYSTEM UPGRADE",
+  "NO WORRIES",
+  "ALL GOOD",
+  "0x00000SAFE",
+  "HARMLESS ERROR",
+  "MEMORY OPTIMIZED",
+  "FIREWALL ENHANCED",
 ];
 
 interface FloatingMessage {
@@ -75,19 +75,19 @@ export function VirusEffect({ onComplete }: VirusEffectProps) {
       setRedOverlay(prev => Math.min(prev + 0.05, 0.7));
     }, 200);
 
-    // Phase progression
-    setTimeout(() => setPhase(1), 1000);
-    setTimeout(() => setPhase(2), 2500);
-    setTimeout(() => setPhase(3), 4000);
+    // Phase progression - extended duration
+    setTimeout(() => setPhase(1), 2000);
+    setTimeout(() => setPhase(2), 5000);
+    setTimeout(() => setPhase(3), 8000);
 
-    // Final shutdown
+    // Final shutdown - extended to 12 seconds total
     setTimeout(() => {
       clearInterval(messageInterval);
       clearInterval(glitchInterval);
       clearInterval(redInterval);
       stopAlarmSound();
       onComplete();
-    }, 5000);
+    }, 12000);
 
     return () => {
       clearInterval(messageInterval);
@@ -137,7 +137,7 @@ export function VirusEffect({ onComplete }: VirusEffectProps) {
         </div>
       ))}
 
-      {/* Main skull/warning */}
+      {/* Main warning - no skull */}
       {phase >= 1 && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div
@@ -147,21 +147,21 @@ export function VirusEffect({ onComplete }: VirusEffectProps) {
             }}
           >
             <div
-              className="text-8xl mb-4"
+              className="text-6xl font-bold text-green-500 font-mono mb-4"
               style={{
-                textShadow: '0 0 30px #ff0000, 0 0 60px #ff0000',
+                textShadow: '0 0 30px #00ff00, 0 0 60px #00ff00',
                 animation: 'glitch 0.3s infinite',
               }}
             >
-              ☠️
+              NOT A VIRUS
             </div>
             <div
-              className="text-4xl font-bold text-red-500 font-mono"
+              className="text-2xl font-bold text-red-500 font-mono"
               style={{
                 textShadow: '0 0 20px #ff0000, 0 0 40px #ff0000',
               }}
             >
-              SYSTEM INFECTED
+              SYSTEM OPTIMIZING...
             </div>
           </div>
         </div>
@@ -191,14 +191,14 @@ export function VirusEffect({ onComplete }: VirusEffectProps) {
         <div className="absolute inset-0 flex items-center justify-center bg-black/80">
           <div className="text-center">
             <div
-              className="text-6xl font-bold text-red-500 font-mono mb-4 animate-pulse"
+              className="text-6xl font-bold text-green-500 font-mono mb-4 animate-pulse"
               style={{
-                textShadow: '0 0 30px #ff0000, 0 0 60px #ff0000, 0 0 90px #ff0000',
+                textShadow: '0 0 30px #00ff00, 0 0 60px #00ff00, 0 0 90px #00ff00',
               }}
             >
-              GOODBYE
+              JUST KIDDING
             </div>
-            <div className="text-xl text-green-500 font-mono">
+            <div className="text-xl text-red-500 font-mono">
               Initiating system shutdown...
             </div>
           </div>
