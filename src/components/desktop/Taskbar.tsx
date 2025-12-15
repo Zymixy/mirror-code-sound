@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Sparkles } from "lucide-react";
+import { Search, LayoutGrid } from "lucide-react";
 import { WindowState } from "@/hooks/useWindowManager";
 import type { LucideIcon } from "lucide-react";
 
@@ -36,7 +36,7 @@ export function Taskbar({
           isStartOpen ? "bg-secondary" : "hover:bg-secondary/80"
         }`}
       >
-        <Sparkles className="w-5 h-5 text-primary" />
+        <LayoutGrid className="w-5 h-5 text-primary" />
       </button>
 
       {/* Search */}
