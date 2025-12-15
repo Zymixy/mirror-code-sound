@@ -10,10 +10,10 @@ import { BootScreen } from "@/components/desktop/BootScreen";
 import { ShutdownDialog } from "@/components/desktop/ShutdownDialog";
 import { ShutdownScreen } from "@/components/desktop/ShutdownScreen";
 import { VirusEffect } from "@/components/desktop/VirusEffect";
+import { WelcomeDialog } from "@/components/desktop/WelcomeDialog";
 import { AboutApp } from "@/components/apps/AboutApp";
 import { ProjectsApp } from "@/components/apps/ProjectsApp";
 import { SkillsApp } from "@/components/apps/SkillsApp";
-import { SettingsApp } from "@/components/apps/SettingsApp";
 import { ContactApp } from "@/components/apps/ContactApp";
 import { TerminalApp } from "@/components/apps/TerminalApp";
 import { BrowserApp } from "@/components/apps/BrowserApp";
@@ -50,6 +50,7 @@ const Index = () => {
   const [isShutdown, setIsShutdown] = useState(false);
   const [showVirus, setShowVirus] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showWelcome, setShowWelcome] = useState(true);
 
   const { windows, focusedWindow, openWindow, closeWindow, minimizeWindow, maximizeWindow, focusWindow, updatePosition, updateSize } = useWindowManager();
 
@@ -91,7 +92,6 @@ const Index = () => {
       case "about": return <AboutApp />;
       case "projects": return <ProjectsApp />;
       case "skills": return <SkillsApp />;
-      case "settings": return <SettingsApp wallpaper={wallpaper} onWallpaperChange={setWallpaper} />;
       case "contact": return <ContactApp />;
       case "terminal": return <TerminalApp />;
       case "browser": return <BrowserApp initialSearch={searchQuery} />;
@@ -101,6 +101,7 @@ const Index = () => {
 
   const windowsWithIcons = windows.map(win => ({ ...win, iconComponent: apps.find(a => a.id === win.id)?.icon }));
 
+  if (showWelcome) return <WelcomeDialog open={showWelcome} onAccept={() => setShowWelcome(false)} />;
   if (isShutdown) return <ShutdownScreen />;
   if (showVirus) return <VirusEffect onComplete={() => setIsShutdown(true)} />;
   if (isBooting) return <BootScreen onComplete={() => setIsBooting(false)} />;

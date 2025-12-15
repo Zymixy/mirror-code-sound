@@ -123,25 +123,6 @@ export function BrowserApp({ initialSearch = "" }: BrowserAppProps) {
                 />
               </div>
 
-              <div className="grid grid-cols-4 gap-4">
-                {[
-                  { name: "Google", url: "https://google.com", color: "bg-blue-500" },
-                  { name: "YouTube", url: "https://youtube.com", color: "bg-red-500" },
-                  { name: "GitHub", url: "https://github.com", color: "bg-gray-700" },
-                  { name: "Reddit", url: "https://reddit.com", color: "bg-orange-500" },
-                ].map((site) => (
-                  <button
-                    key={site.name}
-                    onClick={() => navigate(site.url)}
-                    className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-secondary transition-colors"
-                  >
-                    <div className={`w-10 h-10 ${site.color} rounded-full flex items-center justify-center text-white font-bold`}>
-                      {site.name[0]}
-                    </div>
-                    <span className="text-xs text-muted-foreground">{site.name}</span>
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
         ) : (
