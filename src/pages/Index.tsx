@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { User, FolderOpen, Code, Settings, Terminal, Globe, Bug } from "lucide-react";
+import { User, FolderOpen, Code, Terminal, Globe, Bug } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useWindowManager } from "@/hooks/useWindowManager";
 import { Window } from "@/components/desktop/Window";
@@ -13,7 +13,7 @@ import { VirusEffect } from "@/components/desktop/VirusEffect";
 import { AboutApp } from "@/components/apps/AboutApp";
 import { ProjectsApp } from "@/components/apps/ProjectsApp";
 import { SkillsApp } from "@/components/apps/SkillsApp";
-import { SettingsApp, wallpapers } from "@/components/apps/SettingsApp";
+import { SettingsApp } from "@/components/apps/SettingsApp";
 import { ContactApp } from "@/components/apps/ContactApp";
 import { TerminalApp } from "@/components/apps/TerminalApp";
 import { BrowserApp } from "@/components/apps/BrowserApp";
@@ -36,7 +36,6 @@ const apps: AppConfig[] = [
   { id: "projects", name: "Projects", icon: FolderOpen, component: "projects" },
   { id: "skills", name: "Skills", icon: Code, component: "skills" },
   { id: "contact", name: "Contact", icon: User, component: "contact" },
-  { id: "settings", name: "Settings", icon: Settings, component: "settings" },
   { id: "terminal", name: "Terminal", icon: Terminal, component: "terminal" },
   { id: "browser", name: "Browser", icon: Globe, component: "browser" },
 ];
@@ -80,7 +79,7 @@ const Index = () => {
     setIsShutdown(true);
   };
 
-  const currentWallpaper = wallpapers.find((w) => w.id === wallpaper);
+  const currentWallpaper = null;
 
   const renderAppContent = (component: string) => {
     switch (component) {
@@ -102,7 +101,7 @@ const Index = () => {
   if (isBooting) return <BootScreen onComplete={() => setIsBooting(false)} />;
 
   return (
-    <div className={`h-screen w-screen overflow-hidden bg-gradient-to-br ${currentWallpaper?.colors || "from-slate-900 to-black"}`}>
+    <div className="h-screen w-screen overflow-hidden bg-background">
       <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
         {desktopApps.map((app) => (
           <DesktopIcon key={app.id} icon={app.id === "contact" ? DiscordIcon : app.icon} label={app.name} onDoubleClick={() => handleOpenApp(app)} />
