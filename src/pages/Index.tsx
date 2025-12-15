@@ -49,6 +49,7 @@ const Index = () => {
   const [showShutdown, setShowShutdown] = useState(false);
   const [isShutdown, setIsShutdown] = useState(false);
   const [showVirus, setShowVirus] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { windows, focusedWindow, openWindow, closeWindow, minimizeWindow, maximizeWindow, focusWindow, updatePosition, updateSize } = useWindowManager();
 
@@ -57,9 +58,13 @@ const Index = () => {
     setIsStartOpen(false);
   };
 
-  const handleSearchClick = () => {
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
     const browserApp = apps.find(a => a.id === "browser");
-    if (browserApp) handleOpenApp(browserApp);
+    if (browserApp) {
+      openWindow(browserApp.id, browserApp.name, browserApp.icon, browserApp.component);
+      setIsStartOpen(false);
+    }
   };
 
   const handleTaskbarWindowClick = (id: string) => {
@@ -89,7 +94,7 @@ const Index = () => {
       case "settings": return <SettingsApp wallpaper={wallpaper} onWallpaperChange={setWallpaper} />;
       case "contact": return <ContactApp />;
       case "terminal": return <TerminalApp />;
-      case "browser": return <BrowserApp />;
+      case "browser": return <BrowserApp initialSearch={searchQuery} />;
       default: return null;
     }
   };
@@ -117,7 +122,7 @@ const Index = () => {
 
       {isStartOpen && <StartMenu apps={apps} onAppClick={handleOpenApp} onClose={() => setIsStartOpen(false)} onShutdown={() => { setIsStartOpen(false); setShowShutdown(true); }} />}
       {showShutdown && <ShutdownDialog onConfirm={handleShutdownConfirm} onCancel={() => setShowShutdown(false)} />}
-      <Taskbar windows={windowsWithIcons} focusedWindow={focusedWindow} onStartClick={() => setIsStartOpen(!isStartOpen)} onWindowClick={handleTaskbarWindowClick} onSearchClick={handleSearchClick} isStartOpen={isStartOpen} />
+      <Taskbar windows={windowsWithIcons} focusedWindow={focusedWindow} onStartClick={() => setIsStartOpen(!isStartOpen)} onWindowClick={handleTaskbarWindowClick} onSearch={handleSearch} isStartOpen={isStartOpen} />
     </div>
   );
 };
