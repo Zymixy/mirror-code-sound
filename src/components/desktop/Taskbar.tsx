@@ -8,7 +8,7 @@ interface TaskbarProps {
   focusedWindow: string | null;
   onStartClick: () => void;
   onWindowClick: (id: string) => void;
-  onSearchClick: () => void;
+  onSearch: (query: string) => void;
   isStartOpen: boolean;
 }
 
@@ -17,10 +17,18 @@ export function Taskbar({
   focusedWindow,
   onStartClick,
   onWindowClick,
-  onSearchClick,
+  onSearch,
   isStartOpen,
 }: TaskbarProps) {
   const [time, setTime] = useState(new Date());
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearchSubmit = () => {
+    if (searchQuery.trim()) {
+      onSearch(searchQuery.trim());
+      setSearchQuery("");
+    }
+  };
 
   useEffect(() => {
     const interval = setInterval(() => setTime(new Date()), 1000);
@@ -42,13 +50,17 @@ export function Taskbar({
       </button>
 
       {/* Search */}
-      <button
-        onClick={onSearchClick}
-        className="ml-1 h-10 px-4 flex items-center gap-2 rounded-md hover:bg-secondary/80 transition-colors"
-      >
+      <div className="ml-1 h-10 px-3 flex items-center gap-2 rounded-full bg-secondary/50 border border-border/50 max-w-xs">
         <Search className="w-4 h-4 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground hidden sm:block">Search</span>
-      </button>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSearchSubmit()}
+          placeholder="Search..."
+          className="bg-transparent outline-none text-sm w-24 sm:w-32"
+        />
+      </div>
 
       {/* Open windows */}
       <div className="flex items-center gap-1 mx-2">

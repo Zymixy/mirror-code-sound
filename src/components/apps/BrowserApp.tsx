@@ -1,43 +1,98 @@
-import { useState } from "react";
-import { ArrowLeft, ArrowRight, RotateCw, Home, Star } from "lucide-react";
+import { useState, useRef } from "react";
+import { ArrowLeft, ArrowRight, RotateCw, Home, Star, Search } from "lucide-react";
 
-const recentSearches = [
-  "67 meme",
-  "how to sigma alfa",
-  "how to drink water",
-];
+interface BrowserAppProps {
+  initialSearch?: string;
+}
 
-export function BrowserApp() {
-  const [url, setUrl] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
+export function BrowserApp({ initialSearch = "" }: BrowserAppProps) {
+  const [url, setUrl] = useState(initialSearch);
+  const [currentUrl, setCurrentUrl] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const handleSearch = (query: string) => {
-    setUrl(query);
-    setIsSearching(true);
+  const formatUrl = (input: string): string => {
+    const trimmed = input.trim();
+    if (!trimmed) return "";
+    
+    // Check if it's already a URL
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+      return trimmed;
+    }
+    
+    // Check if it looks like a domain
+    if (trimmed.includes(".") && !trimmed.includes(" ")) {
+      return `https://${trimmed}`;
+    }
+    
+    // Otherwise, search with Google
+    return `https://www.google.com/search?igu=1&q=${encodeURIComponent(trimmed)}`;
+  };
+
+  const navigate = (input: string) => {
+    const formattedUrl = formatUrl(input);
+    if (formattedUrl) {
+      setCurrentUrl(formattedUrl);
+      setUrl(input);
+      setIsLoading(true);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      navigate(url);
+    }
+  };
+
+  const goHome = () => {
+    setCurrentUrl("");
+    setUrl("");
+    setIsLoading(false);
+  };
+
+  const refresh = () => {
+    if (iframeRef.current && currentUrl) {
+      setIsLoading(true);
+      iframeRef.current.src = currentUrl;
+    }
   };
 
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Browser toolbar */}
       <div className="flex items-center gap-2 p-2 bg-secondary/50 border-b border-border">
-        <button className="p-2 rounded-lg hover:bg-secondary transition-colors">
+        <button 
+          onClick={() => window.history.back()}
+          className="p-2 rounded-lg hover:bg-secondary transition-colors"
+        >
           <ArrowLeft className="w-4 h-4 text-muted-foreground" />
         </button>
-        <button className="p-2 rounded-lg hover:bg-secondary transition-colors">
+        <button 
+          onClick={() => window.history.forward()}
+          className="p-2 rounded-lg hover:bg-secondary transition-colors"
+        >
           <ArrowRight className="w-4 h-4 text-muted-foreground" />
         </button>
-        <button className="p-2 rounded-lg hover:bg-secondary transition-colors">
-          <RotateCw className="w-4 h-4 text-muted-foreground" />
+        <button 
+          onClick={refresh}
+          className="p-2 rounded-lg hover:bg-secondary transition-colors"
+        >
+          <RotateCw className={`w-4 h-4 text-muted-foreground ${isLoading ? "animate-spin" : ""}`} />
         </button>
-        <button className="p-2 rounded-lg hover:bg-secondary transition-colors">
+        <button 
+          onClick={goHome}
+          className="p-2 rounded-lg hover:bg-secondary transition-colors"
+        >
           <Home className="w-4 h-4 text-muted-foreground" />
         </button>
-        <div className="flex-1 flex items-center gap-2 px-3 py-1.5 bg-background rounded-full">
+        <div className="flex-1 flex items-center gap-2 px-3 py-1.5 bg-background rounded-full border border-border">
+          <Search className="w-4 h-4 text-muted-foreground" />
           <input
             type="text"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="Search or enter URL"
+            onKeyDown={handleKeyDown}
+            placeholder="Search Google or enter URL"
             className="flex-1 bg-transparent outline-none text-sm"
           />
         </div>
@@ -47,50 +102,57 @@ export function BrowserApp() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-6 overflow-auto">
-        {!isSearching ? (
-          <div className="max-w-md mx-auto">
-            <h2 className="text-2xl font-bold text-center mb-8">Search</h2>
+      <div className="flex-1 overflow-hidden">
+        {!currentUrl ? (
+          <div className="h-full flex flex-col items-center justify-center p-6">
+            <div className="max-w-md w-full text-center">
+              <h2 className="text-3xl font-bold mb-2">Search</h2>
+              <p className="text-muted-foreground mb-6">Search the web or enter a URL</p>
+              
+              <div className="relative mb-8">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search Google or enter URL..."
+                  className="w-full pl-12 pr-4 py-3 bg-secondary rounded-full text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && e.currentTarget.value) {
+                      navigate(e.currentTarget.value);
+                    }
+                  }}
+                />
+              </div>
 
-            <div className="relative mb-8">
-              <input
-                type="text"
-                placeholder="Search the web..."
-                className="w-full px-4 py-3 bg-secondary rounded-full text-sm outline-none focus:ring-2 focus:ring-primary/50"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && e.currentTarget.value) {
-                    handleSearch(e.currentTarget.value);
-                  }
-                }}
-              />
-            </div>
-
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-3">Recent Searches</h3>
-              <div className="space-y-1">
-                {recentSearches.map((search, i) => (
+              <div className="grid grid-cols-4 gap-4">
+                {[
+                  { name: "Google", url: "https://google.com", color: "bg-blue-500" },
+                  { name: "YouTube", url: "https://youtube.com", color: "bg-red-500" },
+                  { name: "GitHub", url: "https://github.com", color: "bg-gray-700" },
+                  { name: "Reddit", url: "https://reddit.com", color: "bg-orange-500" },
+                ].map((site) => (
                   <button
-                    key={i}
-                    onClick={() => handleSearch(search)}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition-colors text-left"
+                    key={site.name}
+                    onClick={() => navigate(site.url)}
+                    className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-secondary transition-colors"
                   >
-                    <RotateCw className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">{search}</span>
+                    <div className={`w-10 h-10 ${site.color} rounded-full flex items-center justify-center text-white font-bold`}>
+                      {site.name[0]}
+                    </div>
+                    <span className="text-xs text-muted-foreground">{site.name}</span>
                   </button>
                 ))}
               </div>
             </div>
           </div>
         ) : (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Searching for "{url}"...</p>
-            <button
-              onClick={() => setIsSearching(false)}
-              className="mt-4 px-4 py-2 bg-secondary rounded-lg text-sm hover:bg-secondary/80"
-            >
-              Back to Search
-            </button>
-          </div>
+          <iframe
+            ref={iframeRef}
+            src={currentUrl}
+            className="w-full h-full border-0"
+            onLoad={() => setIsLoading(false)}
+            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+            title="Browser"
+          />
         )}
       </div>
     </div>
