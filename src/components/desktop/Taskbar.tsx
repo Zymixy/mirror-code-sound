@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, LayoutGrid } from "lucide-react";
+import { Search } from "lucide-react";
 import { WindowState } from "@/hooks/useWindowManager";
 import type { LucideIcon } from "lucide-react";
 
@@ -36,7 +36,9 @@ export function Taskbar({
           isStartOpen ? "bg-secondary" : "hover:bg-secondary/80"
         }`}
       >
-        <LayoutGrid className="w-5 h-5 text-primary" />
+        <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
+        </svg>
       </button>
 
       {/* Search */}
