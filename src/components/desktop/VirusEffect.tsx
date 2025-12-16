@@ -316,14 +316,6 @@ export function VirusEffect({ onComplete }: VirusEffectProps) {
       {phase >= 4 && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/90 z-10">
           <div className="text-center" style={{ animation: 'finalReveal 0.5s ease-out' }}>
-            <div
-              className="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-300 to-cyan-400 font-mono mb-6"
-              style={{
-                textShadow: '0 0 40px #00ff00, 0 0 80px #00ff00, 0 0 120px #00ffff',
-              }}
-            >
-              JUST KIDDING
-            </div>
             <div className="text-xl text-red-400 font-mono animate-pulse">
               Initiating system shutdown...
             </div>
