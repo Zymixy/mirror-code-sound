@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Shield, X } from "lucide-react";
 import { useVirusSound } from "@/hooks/useVirusSound";
 
 interface DefenderPopup {
@@ -64,7 +63,7 @@ export function DefenderPopups({ onComplete }: DefenderPopupsProps) {
 
   return (
     <div className="fixed inset-0 z-[9998] pointer-events-none">
-      {/* Windows Defender Popups - White/Light theme */}
+      {/* Windows Defender Popups - Clean Windows style */}
       {popups.map((popup, index) => (
         <div
           key={popup.id}
@@ -76,50 +75,45 @@ export function DefenderPopups({ onComplete }: DefenderPopupsProps) {
             zIndex: 9998 + index,
           }}
         >
-          <div className="w-[360px] bg-white border border-gray-300 rounded shadow-xl">
+          <div className="w-[340px] bg-[#f3f3f3] border border-[#d4d4d4] shadow-md">
             {/* Windows-style header */}
-            <div className="flex items-center justify-between px-3 py-2 bg-gray-100 border-b border-gray-200 rounded-t">
-              <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-green-600" />
-                <span className="text-gray-800 text-xs font-medium">Windows Security</span>
-              </div>
-              <X className="w-3.5 h-3.5 text-gray-500 hover:text-gray-700 cursor-pointer" />
+            <div className="flex items-center justify-between px-3 py-1.5 bg-[#e8e8e8] border-b border-[#ccc]">
+              <span className="text-[#333] text-xs font-normal">Windows Security</span>
+              <span className="text-[#666] text-xs cursor-pointer hover:text-[#333]">✕</span>
             </div>
             
             {/* Content */}
             <div className="p-3">
-              <div className="flex items-start gap-3">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  popup.type === 'critical' ? 'bg-red-100' : popup.type === 'warning' ? 'bg-yellow-100' : 'bg-blue-100'
+              <div className="flex items-start gap-2">
+                <div className={`w-6 h-6 rounded-sm flex items-center justify-center flex-shrink-0 text-xs ${
+                  popup.type === 'critical' ? 'bg-[#d32f2f] text-white' : popup.type === 'warning' ? 'bg-[#f9a825] text-[#333]' : 'bg-[#1976d2] text-white'
                 }`}>
-                  <Shield className={`w-4 h-4 ${
-                    popup.type === 'critical' ? 'text-red-600' : popup.type === 'warning' ? 'text-yellow-600' : 'text-blue-600'
-                  }`} />
+                  {popup.type === 'critical' ? '!' : popup.type === 'warning' ? '⚠' : '↻'}
                 </div>
                 <div className="flex-1">
-                  <p className={`text-sm font-medium ${
-                    popup.type === 'critical' ? 'text-red-700' : 'text-gray-800'
+                  <p className={`text-xs ${
+                    popup.type === 'critical' ? 'text-[#c62828]' : 'text-[#333]'
                   }`}>{popup.message}</p>
                   {popup.type === 'scan' && (
                     <div className="mt-2">
-                      <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-1 bg-[#ddd] overflow-hidden">
                         <div 
-                          className="h-full bg-blue-500 transition-all duration-100"
+                          className="h-full bg-[#1976d2] transition-all duration-100"
                           style={{ width: `${scanProgress}%` }}
                         />
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">C:\Windows\System32\...</p>
+                      <p className="text-[10px] text-[#666] mt-1">C:\Windows\System32\...</p>
                     </div>
                   )}
                 </div>
               </div>
               
               {/* Buttons */}
-              <div className="flex gap-2 mt-3 justify-end">
-                <button className="px-3 py-1 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-xs rounded transition-colors">
+              <div className="flex gap-2 mt-2 justify-end">
+                <button className="px-2 py-0.5 bg-[#e0e0e0] hover:bg-[#d0d0d0] border border-[#999] text-[#333] text-[10px]">
                   Dismiss
                 </button>
-                <button className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors">
+                <button className="px-2 py-0.5 bg-[#0078d4] hover:bg-[#106ebe] text-white text-[10px] border border-[#0078d4]">
                   Take action
                 </button>
               </div>
@@ -133,12 +127,12 @@ export function DefenderPopups({ onComplete }: DefenderPopupsProps) {
         className="fixed bottom-12 right-4 pointer-events-auto"
         style={{ animation: 'slideUp 0.2s ease-out 0.5s both' }}
       >
-        <div className="bg-white border border-gray-300 rounded shadow-lg p-3 w-[280px]">
+        <div className="bg-[#f3f3f3] border border-[#ccc] shadow-md p-2 w-[260px]">
           <div className="flex items-center gap-2 mb-1">
-            <Shield className="w-4 h-4 text-yellow-600" />
-            <span className="text-gray-800 text-xs font-medium">Windows Security</span>
+            <span className="w-4 h-4 bg-[#f9a825] rounded-sm flex items-center justify-center text-[10px] text-[#333]">⚠</span>
+            <span className="text-[#333] text-xs font-normal">Windows Security</span>
           </div>
-          <p className="text-gray-600 text-xs">Threats detected. Action recommended.</p>
+          <p className="text-[#555] text-[10px]">Threats detected. Action recommended.</p>
         </div>
       </div>
 
