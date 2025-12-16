@@ -10,6 +10,7 @@ import { BootScreen } from "@/components/desktop/BootScreen";
 import { ShutdownDialog } from "@/components/desktop/ShutdownDialog";
 import { ShutdownScreen } from "@/components/desktop/ShutdownScreen";
 import { VirusEffect } from "@/components/desktop/VirusEffect";
+import { DefenderPopups } from "@/components/desktop/DefenderPopups";
 import { WelcomeDialog } from "@/components/desktop/WelcomeDialog";
 import { AboutApp } from "@/components/apps/AboutApp";
 import { ProjectsApp } from "@/components/apps/ProjectsApp";
@@ -48,6 +49,7 @@ const Index = () => {
   const [isBooting, setIsBooting] = useState(true);
   const [showShutdown, setShowShutdown] = useState(false);
   const [isShutdown, setIsShutdown] = useState(false);
+  const [showDefenderPopups, setShowDefenderPopups] = useState(false);
   const [showVirus, setShowVirus] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showWelcome, setShowWelcome] = useState(true);
@@ -108,11 +110,19 @@ const Index = () => {
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-background">
+      {/* Defender popups overlay on desktop */}
+      {showDefenderPopups && (
+        <DefenderPopups onComplete={() => {
+          setShowDefenderPopups(false);
+          setShowVirus(true);
+        }} />
+      )}
+
       <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
         {desktopApps.map((app) => (
           <DesktopIcon key={app.id} icon={app.id === "contact" ? DiscordIcon : app.icon} label={app.name} onDoubleClick={() => handleOpenApp(app)} />
         ))}
-        <DesktopIcon icon={Bug} label="Not a Virus" onDoubleClick={() => setShowVirus(true)} />
+        <DesktopIcon icon={Bug} label="Not a Virus" onDoubleClick={() => setShowDefenderPopups(true)} />
       </div>
 
       {windows.map((win) => (
