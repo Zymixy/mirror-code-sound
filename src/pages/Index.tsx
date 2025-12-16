@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { User, FolderOpen, Code, Terminal, Globe, Bug } from "lucide-react";
+import { User, FolderOpen, Code, Terminal, Globe, Bug, Megaphone } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useWindowManager } from "@/hooks/useWindowManager";
 import { Window } from "@/components/desktop/Window";
@@ -18,6 +18,7 @@ import { SkillsApp } from "@/components/apps/SkillsApp";
 import { ContactApp } from "@/components/apps/ContactApp";
 import { TerminalApp } from "@/components/apps/TerminalApp";
 import { BrowserApp } from "@/components/apps/BrowserApp";
+import { AdsApp } from "@/components/apps/AdsApp";
 
 interface AppConfig {
   id: string;
@@ -39,6 +40,7 @@ const apps: AppConfig[] = [
   { id: "contact", name: "Contact", icon: User, component: "contact" },
   { id: "terminal", name: "Terminal", icon: Terminal, component: "terminal" },
   { id: "browser", name: "Browser", icon: Globe, component: "browser" },
+  { id: "ads", name: "Free Offers", icon: Megaphone, component: "ads" },
 ];
 
 const desktopApps = apps.slice(0, 4);
@@ -97,6 +99,7 @@ const Index = () => {
       case "contact": return <ContactApp />;
       case "terminal": return <TerminalApp />;
       case "browser": return <BrowserApp initialSearch={searchQuery} />;
+      case "ads": return <AdsApp />;
       default: return null;
     }
   };
@@ -123,6 +126,7 @@ const Index = () => {
           <DesktopIcon key={app.id} icon={app.id === "contact" ? DiscordIcon : app.icon} label={app.name} onDoubleClick={() => handleOpenApp(app)} />
         ))}
         <DesktopIcon icon={Bug} label="Not a Virus" onDoubleClick={() => setShowDefenderPopups(true)} />
+        <DesktopIcon icon={Megaphone} label="Free Offers" onDoubleClick={() => handleOpenApp(apps.find(a => a.id === "ads")!)} />
       </div>
 
       {windows.map((win) => (
