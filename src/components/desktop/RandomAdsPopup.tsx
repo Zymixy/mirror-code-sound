@@ -53,7 +53,7 @@ export function RandomAdsPopup() {
       x: 50 + Math.random() * (window.innerWidth - 300),
       y: 50 + Math.random() * (window.innerHeight - 200),
     };
-    setPopups(prev => [...prev.slice(-4), newPopup]);
+    setPopups(prev => [...prev.slice(-3), newPopup]);
     playMailSound();
   };
 
