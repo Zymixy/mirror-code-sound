@@ -32,7 +32,7 @@ const MAIL_SOUND_URL = "https://www.myinstants.com/media/sounds/yougotmail.mp3";
 
 const playMailSound = () => {
   const audio = new Audio(MAIL_SOUND_URL);
-  audio.volume = 0.7;
+  audio.volume = 0.3;
   audio.play().catch((e) => console.log("Audio play error:", e));
 };
 
