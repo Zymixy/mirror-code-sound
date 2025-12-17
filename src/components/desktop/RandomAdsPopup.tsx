@@ -28,12 +28,12 @@ interface PopupAd {
 }
 
 // Sound URL for "You've got mail"
-const MAIL_SOUND_URL = "https://www.myinstants.com/media/sounds/youve-got-mail-sound.mp3";
+const MAIL_SOUND_URL = "https://www.myinstants.com/media/sounds/yougotmail.mp3";
 
 const playMailSound = () => {
   const audio = new Audio(MAIL_SOUND_URL);
-  audio.volume = 0.5;
-  audio.play().catch(() => {});
+  audio.volume = 0.7;
+  audio.play().catch((e) => console.log("Audio play error:", e));
 };
 
 export function RandomAdsPopup() {
