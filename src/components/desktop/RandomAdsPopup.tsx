@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface Ad {
   id: number;
@@ -29,14 +29,14 @@ interface PopupAd {
 
 export function RandomAdsPopup() {
   const [popups, setPopups] = useState<PopupAd[]>([]);
+  const [dragging, setDragging] = useState<number | null>(null);
+  const dragOffset = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
-    // Show first ad after 5 seconds
     const initialTimer = setTimeout(() => {
       addRandomAd();
     }, 5000);
 
-    // Then show ads every 15 seconds
     const interval = setInterval(() => {
       addRandomAd();
     }, 15000);
@@ -47,19 +47,52 @@ export function RandomAdsPopup() {
     };
   }, []);
 
+  useEffect(() => {
+    if (dragging === null) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      setPopups(prev => prev.map(p => 
+        p.id === dragging 
+          ? { ...p, x: e.clientX - dragOffset.current.x, y: e.clientY - dragOffset.current.y }
+          : p
+      ));
+    };
+
+    const handleMouseUp = () => {
+      setDragging(null);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [dragging]);
+
   const addRandomAd = () => {
     const randomAd = jokeAds[Math.floor(Math.random() * jokeAds.length)];
     const newPopup: PopupAd = {
       id: Date.now(),
       ad: randomAd,
-      x: 10 + Math.random() * 60,
-      y: 10 + Math.random() * 50,
+      x: 50 + Math.random() * (window.innerWidth - 300),
+      y: 50 + Math.random() * (window.innerHeight - 200),
     };
-    setPopups(prev => [...prev.slice(-4), newPopup]); // Keep max 5 popups
+    setPopups(prev => [...prev.slice(-4), newPopup]);
   };
 
   const closePopup = (id: number) => {
     setPopups(prev => prev.filter(p => p.id !== id));
+  };
+
+  const handleMouseDown = (e: React.MouseEvent, popup: PopupAd) => {
+    e.preventDefault();
+    dragOffset.current = {
+      x: e.clientX - popup.x,
+      y: e.clientY - popup.y,
+    };
+    setDragging(popup.id);
   };
 
   return (
@@ -67,33 +100,36 @@ export function RandomAdsPopup() {
       {popups.map((popup) => (
         <div
           key={popup.id}
-          className="fixed z-[200] pointer-events-auto"
+          className="fixed z-[200] pointer-events-auto select-none"
           style={{
-            left: `${popup.x}%`,
-            top: `${popup.y}%`,
-            animation: 'adPopIn 0.3s ease-out',
+            left: popup.x,
+            top: popup.y,
+            animation: dragging === popup.id ? 'none' : 'adPopIn 0.3s ease-out',
           }}
         >
-          <div className="w-[260px] bg-[#ffffcc] border-2 border-[#808080] shadow-[3px_3px_0_#000]">
+          <div className="w-[240px] bg-[#c0c0c0] border-2 border-t-[#dfdfdf] border-l-[#dfdfdf] border-r-[#404040] border-b-[#404040] shadow-[2px_2px_0_#000]">
             {/* Win95 title bar */}
-            <div className="flex items-center justify-between px-1 py-0.5 bg-gradient-to-r from-[#000080] to-[#1084d0]">
-              <span className="text-white text-[10px] font-bold">Advertisement</span>
+            <div 
+              className="flex items-center justify-between px-1 py-0.5 bg-[#000080] cursor-move"
+              onMouseDown={(e) => handleMouseDown(e, popup)}
+            >
+              <span className="text-[#fff] text-[10px] font-bold truncate">Advertisement</span>
               <button
                 onClick={() => closePopup(popup.id)}
-                className="w-4 h-4 bg-[#c0c0c0] border border-[#fff] border-r-[#404040] border-b-[#404040] text-[10px] font-bold flex items-center justify-center hover:bg-[#d0d0d0]"
+                className="w-4 h-4 bg-[#c0c0c0] border border-t-[#dfdfdf] border-l-[#dfdfdf] border-r-[#404040] border-b-[#404040] text-[10px] font-bold flex items-center justify-center hover:bg-[#d0d0d0] active:border-t-[#404040] active:border-l-[#404040] active:border-r-[#dfdfdf] active:border-b-[#dfdfdf]"
               >
                 ✕
               </button>
             </div>
             
             {/* Content */}
-            <div className="p-2">
-              <p className="text-[11px] font-bold text-[#cc0000] mb-1 leading-tight">
+            <div className="p-2 bg-[#c0c0c0]">
+              <p className="text-[10px] font-bold text-[#800000] mb-1 leading-tight">
                 {popup.ad.title}
               </p>
-              <p className="text-[9px] text-[#333] mb-2 leading-tight">{popup.ad.subtitle}</p>
-              <button className="w-full py-1 bg-[#c0c0c0] border-2 border-[#fff] border-r-[#404040] border-b-[#404040] text-[10px] font-bold text-[#000080] hover:bg-[#d0d0d0] active:border-[#404040] active:border-r-[#fff] active:border-b-[#fff]">
-                {popup.ad.buttonText}
+              <p className="text-[9px] text-[#000] mb-2 leading-tight">{popup.ad.subtitle}</p>
+              <button className="w-full py-1 bg-[#c0c0c0] border-2 border-t-[#dfdfdf] border-l-[#dfdfdf] border-r-[#404040] border-b-[#404040] text-[9px] font-bold text-[#000080] hover:bg-[#d0d0d0] active:border-t-[#404040] active:border-l-[#404040] active:border-r-[#dfdfdf] active:border-b-[#dfdfdf]">
+                &gt;&gt; {popup.ad.buttonText} &lt;&lt;
               </button>
             </div>
           </div>
@@ -102,7 +138,7 @@ export function RandomAdsPopup() {
 
       <style>{`
         @keyframes adPopIn {
-          0% { opacity: 0; transform: scale(0.8); }
+          0% { opacity: 0; transform: scale(0.9); }
           100% { opacity: 1; transform: scale(1); }
         }
       `}</style>
