@@ -122,19 +122,6 @@ export function DefenderPopups({ onComplete }: DefenderPopupsProps) {
         </div>
       ))}
 
-      {/* Taskbar notification */}
-      <div 
-        className="fixed bottom-12 right-4 pointer-events-auto"
-        style={{ animation: 'slideUp 0.2s ease-out 0.5s both' }}
-      >
-        <div className="bg-[#f3f3f3] border border-[#ccc] shadow-md p-2 w-[260px]">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-4 h-4 bg-[#f9a825] rounded-sm flex items-center justify-center text-[10px] text-[#333]">⚠</span>
-            <span className="text-[#333] text-xs font-normal">Windows Security</span>
-          </div>
-          <p className="text-[#555] text-[10px]">Threats detected. Action recommended.</p>
-        </div>
-      </div>
 
       <style>{`
         @keyframes defenderSlide {
