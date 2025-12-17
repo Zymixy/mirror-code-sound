@@ -27,23 +27,57 @@ interface PopupAd {
   y: number;
 }
 
+// Sound URL for "You've got mail"
+const MAIL_SOUND_URL = "https://www.myinstants.com/media/sounds/youve-got-mail-sound.mp3";
+
+const playMailSound = () => {
+  const audio = new Audio(MAIL_SOUND_URL);
+  audio.volume = 0.5;
+  audio.play().catch(() => {});
+};
+
 export function RandomAdsPopup() {
   const [popups, setPopups] = useState<PopupAd[]>([]);
   const [dragging, setDragging] = useState<number | null>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
 
+  const getRandomInterval = () => {
+    return 15000 + Math.random() * 10000; // 15-25 seconds
+  };
+
+  const addRandomAd = () => {
+    const randomAd = jokeAds[Math.floor(Math.random() * jokeAds.length)];
+    const newPopup: PopupAd = {
+      id: Date.now(),
+      ad: randomAd,
+      x: 50 + Math.random() * (window.innerWidth - 300),
+      y: 50 + Math.random() * (window.innerHeight - 200),
+    };
+    setPopups(prev => [...prev.slice(-4), newPopup]);
+    playMailSound();
+  };
+
   useEffect(() => {
+    // Initial popup after 5 seconds
     const initialTimer = setTimeout(() => {
       addRandomAd();
     }, 5000);
 
-    const interval = setInterval(() => {
-      addRandomAd();
-    }, 15000);
+    // Schedule next popup with random interval
+    let timeoutId: NodeJS.Timeout;
+    
+    const scheduleNext = () => {
+      timeoutId = setTimeout(() => {
+        addRandomAd();
+        scheduleNext();
+      }, getRandomInterval());
+    };
+    
+    scheduleNext();
 
     return () => {
       clearTimeout(initialTimer);
-      clearInterval(interval);
+      clearTimeout(timeoutId);
     };
   }, []);
 
@@ -70,17 +104,6 @@ export function RandomAdsPopup() {
       window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [dragging]);
-
-  const addRandomAd = () => {
-    const randomAd = jokeAds[Math.floor(Math.random() * jokeAds.length)];
-    const newPopup: PopupAd = {
-      id: Date.now(),
-      ad: randomAd,
-      x: 50 + Math.random() * (window.innerWidth - 300),
-      y: 50 + Math.random() * (window.innerHeight - 200),
-    };
-    setPopups(prev => [...prev.slice(-4), newPopup]);
-  };
 
   const closePopup = (id: number) => {
     setPopups(prev => prev.filter(p => p.id !== id));

@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useVirusSound } from "@/hooks/useVirusSound";
 
 interface DefenderPopup {
   id: number;
   x: number;
   y: number;
+  vx: number;
+  vy: number;
   type: "warning" | "critical" | "scan";
   message: string;
 }
@@ -27,17 +29,53 @@ const popupMessages = [
 export function DefenderPopups({ onComplete }: DefenderPopupsProps) {
   const [popups, setPopups] = useState<DefenderPopup[]>([]);
   const [scanProgress, setScanProgress] = useState(0);
+  const animationRef = useRef<number>();
   useVirusSound();
+
+  // Bounce animation
+  useEffect(() => {
+    const animate = () => {
+      setPopups(prev => prev.map(popup => {
+        let newX = popup.x + popup.vx;
+        let newY = popup.y + popup.vy;
+        let newVx = popup.vx;
+        let newVy = popup.vy;
+
+        // Bounce off walls
+        if (newX <= 0 || newX >= window.innerWidth - 340) {
+          newVx = -newVx;
+          newX = Math.max(0, Math.min(newX, window.innerWidth - 340));
+        }
+        if (newY <= 0 || newY >= window.innerHeight - 150) {
+          newVy = -newVy;
+          newY = Math.max(0, Math.min(newY, window.innerHeight - 150));
+        }
+
+        return { ...popup, x: newX, y: newY, vx: newVx, vy: newVy };
+      }));
+
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     let popupIndex = 0;
     const popupInterval = setInterval(() => {
       if (popupIndex < popupMessages.length) {
         const msg = popupMessages[popupIndex];
+        const speed = 2 + Math.random() * 3;
+        const angle = Math.random() * Math.PI * 2;
         setPopups(prev => [...prev, {
           id: Date.now() + Math.random(),
-          x: 15 + Math.random() * 35,
-          y: 8 + Math.random() * 45,
+          x: 50 + Math.random() * (window.innerWidth - 400),
+          y: 50 + Math.random() * (window.innerHeight - 200),
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
           type: msg.type,
           message: msg.message,
         }]);
@@ -62,16 +100,15 @@ export function DefenderPopups({ onComplete }: DefenderPopupsProps) {
   }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 z-[9998] pointer-events-none">
-      {/* Windows Defender Popups - Clean Windows style */}
+    <div className="fixed inset-0 z-[9998] pointer-events-none overflow-hidden">
+      {/* Windows Defender Popups - Bouncing */}
       {popups.map((popup, index) => (
         <div
           key={popup.id}
           className="absolute pointer-events-auto"
           style={{
-            left: `${popup.x + index * 1.5}%`,
-            top: `${popup.y + index * 2}%`,
-            animation: 'defenderSlide 0.2s ease-out',
+            left: popup.x,
+            top: popup.y,
             zIndex: 9998 + index,
           }}
         >
@@ -121,18 +158,6 @@ export function DefenderPopups({ onComplete }: DefenderPopupsProps) {
           </div>
         </div>
       ))}
-
-
-      <style>{`
-        @keyframes defenderSlide {
-          0% { opacity: 0; transform: translateY(-10px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes slideUp {
-          0% { opacity: 0; transform: translateY(20px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 }
