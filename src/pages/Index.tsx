@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { User, FolderOpen, Code, Terminal, Globe, Bug } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useWindowManager } from "@/hooks/useWindowManager";
@@ -11,7 +11,6 @@ import { ShutdownDialog } from "@/components/desktop/ShutdownDialog";
 import { ShutdownScreen } from "@/components/desktop/ShutdownScreen";
 import { VirusEffect } from "@/components/desktop/VirusEffect";
 import { DefenderPopups } from "@/components/desktop/DefenderPopups";
-import { WelcomeDialog } from "@/components/desktop/WelcomeDialog";
 import { RandomAdsPopup } from "@/components/desktop/RandomAdsPopup";
 import { AboutApp } from "@/components/apps/AboutApp";
 import { ProjectsApp } from "@/components/apps/ProjectsApp";
@@ -53,7 +52,11 @@ const Index = () => {
   const [showDefenderPopups, setShowDefenderPopups] = useState(false);
   const [showVirus, setShowVirus] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showWelcome, setShowWelcome] = useState(true);
+
+  // Auto fullscreen on mount
+  useEffect(() => {
+    document.documentElement.requestFullscreen?.().catch(() => {});
+  }, []);
 
   const { windows, focusedWindow, openWindow, closeWindow, minimizeWindow, maximizeWindow, focusWindow, updatePosition, updateSize } = useWindowManager();
 
@@ -104,7 +107,6 @@ const Index = () => {
 
   const windowsWithIcons = windows.map(win => ({ ...win, iconComponent: apps.find(a => a.id === win.id)?.icon }));
 
-  if (showWelcome) return <WelcomeDialog open={showWelcome} onAccept={() => setShowWelcome(false)} />;
   if (isShutdown) return <ShutdownScreen />;
   if (showVirus) return <VirusEffect onComplete={() => setIsShutdown(true)} />;
   if (isBooting) return <BootScreen onComplete={() => setIsBooting(false)} />;
