@@ -111,22 +111,17 @@ const Index = () => {
 
   if (showWelcome) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-black">
-        <div className="bg-[#f0f0f0] border border-[#858585] shadow-lg w-[300px]">
-          <div className="bg-gradient-to-r from-[#0058e6] to-[#3a93ff] px-2 py-1">
-            <span className="text-white text-sm">Desktop Simulator</span>
-          </div>
-          <div className="p-4">
-            <p className="text-[#000] text-sm mb-4">Click Continue to start in fullscreen mode.</p>
-            <div className="flex justify-end">
-              <button
-                onClick={handleContinue}
-                className="px-6 py-1 bg-[#e1e1e1] hover:bg-[#c8c8c8] border border-[#858585] text-sm text-[#000]"
-              >
-                Continue
-              </button>
-            </div>
-          </div>
+      <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Desktop Simulator</h1>
+          <p className="text-gray-400 mb-8">Click to start in fullscreen mode</p>
+          <button
+            onClick={handleContinue}
+            className="group relative px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium rounded-lg transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-105"
+          >
+            <span className="relative z-10">Continue</span>
+            <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-400 to-cyan-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+          </button>
         </div>
       </div>
     );
