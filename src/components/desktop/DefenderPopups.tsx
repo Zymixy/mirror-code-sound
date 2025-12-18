@@ -30,7 +30,12 @@ export function DefenderPopups({ onComplete }: DefenderPopupsProps) {
   const [popups, setPopups] = useState<DefenderPopup[]>([]);
   const [scanProgress, setScanProgress] = useState(0);
   const animationRef = useRef<number>();
-  useVirusSound();
+  const { playAlarmSound } = useVirusSound();
+
+  // Start alarm sound immediately when component mounts
+  useEffect(() => {
+    playAlarmSound();
+  }, [playAlarmSound]);
 
   // Bounce animation
   useEffect(() => {

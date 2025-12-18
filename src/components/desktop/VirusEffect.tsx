@@ -65,7 +65,7 @@ export function VirusEffect({ onComplete }: VirusEffectProps) {
 
   useEffect(() => {
     setShake(true);
-    playAlarmSound();
+    // Sound already started in DefenderPopups, no need to play again
 
     // Initialize matrix columns
     setMatrixColumns(Array.from({ length: 40 }, (_, i) => i));
