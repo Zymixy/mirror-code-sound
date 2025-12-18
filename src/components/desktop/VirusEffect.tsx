@@ -128,13 +128,13 @@ export function VirusEffect({ onComplete }: VirusEffectProps) {
       setCorruption(prev => Math.min(prev + 1, 100));
     }, 150);
 
-    // Phase progression
-    setTimeout(() => setPhase(1), 1500);
-    setTimeout(() => setPhase(2), 4000);
-    setTimeout(() => setPhase(3), 7000);
-    setTimeout(() => setPhase(4), 10000);
+    // Phase progression (adjusted for 8 seconds)
+    setTimeout(() => setPhase(1), 1000);
+    setTimeout(() => setPhase(2), 2500);
+    setTimeout(() => setPhase(3), 5000);
+    setTimeout(() => setPhase(4), 7000);
 
-    // Final shutdown
+    // Final shutdown at 8 seconds
     setTimeout(() => {
       clearInterval(messageInterval);
       clearInterval(glitchInterval);
@@ -143,7 +143,7 @@ export function VirusEffect({ onComplete }: VirusEffectProps) {
       clearInterval(redInterval);
       stopAlarmSound();
       onComplete();
-    }, 12000);
+    }, 8000);
 
     return () => {
       clearInterval(messageInterval);
