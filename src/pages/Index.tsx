@@ -111,16 +111,14 @@ const Index = () => {
 
   if (showWelcome) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+      <div className="h-screen w-screen flex items-center justify-center bg-black">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Desktop Simulator</h1>
-          <p className="text-gray-400 mb-8">Click to start in fullscreen mode</p>
+          <h1 className="text-3xl font-light text-white mb-8 tracking-wide">Desktop Simulator</h1>
           <button
             onClick={handleContinue}
-            className="group relative px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium rounded-lg transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-105"
+            className="px-8 py-2.5 bg-white hover:bg-gray-100 text-black font-medium rounded transition-all duration-200 hover:scale-105"
           >
-            <span className="relative z-10">Continue</span>
-            <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-400 to-cyan-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+            Continue
           </button>
         </div>
       </div>
