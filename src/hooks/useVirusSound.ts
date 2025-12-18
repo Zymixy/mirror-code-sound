@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 export function useVirusSound() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const oscillatorsRef = useRef<OscillatorNode[]>([]);
+  const intervalsRef = useRef<NodeJS.Timeout[]>([]);
 
   const playAlarmSound = () => {
     // Create audio context
@@ -11,78 +12,109 @@ export function useVirusSound() {
 
     // Create master gain
     const masterGain = ctx.createGain();
-    masterGain.gain.value = 0.3;
+    masterGain.gain.value = 0.25;
     masterGain.connect(ctx.destination);
 
-    // Function to create an oscillator
-    const createOscillator = (frequency: number, type: OscillatorType, delay: number) => {
+    // Distortion for more chaos
+    const distortion = ctx.createWaveShaper();
+    const makeDistortionCurve = (amount: number) => {
+      const samples = 44100;
+      const curve = new Float32Array(samples);
+      for (let i = 0; i < samples; i++) {
+        const x = (i * 2) / samples - 1;
+        curve[i] = ((3 + amount) * x * 20 * (Math.PI / 180)) / (Math.PI + amount * Math.abs(x));
+      }
+      return curve;
+    };
+    distortion.curve = makeDistortionCurve(50);
+    distortion.connect(masterGain);
+
+    // Create chaotic glitch sounds
+    const createGlitchOsc = () => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       
-      osc.type = type;
-      osc.frequency.value = frequency;
-      
-      // Pulsing effect
-      gain.gain.value = 0;
+      osc.type = ['square', 'sawtooth', 'triangle'][Math.floor(Math.random() * 3)] as OscillatorType;
+      osc.frequency.value = 100 + Math.random() * 2000;
+      gain.gain.value = 0.1 + Math.random() * 0.2;
       
       osc.connect(gain);
-      gain.connect(masterGain);
+      gain.connect(distortion);
       
-      // Start after delay
-      osc.start(ctx.currentTime + delay);
-      
-      // Pulsing automation
-      const pulseRate = 0.15;
-      for (let i = 0; i < 50; i++) {
-        const time = ctx.currentTime + delay + i * pulseRate;
-        gain.gain.setValueAtTime(0.5, time);
-        gain.gain.setValueAtTime(0.1, time + pulseRate * 0.5);
-      }
-      
+      osc.start();
       oscillatorsRef.current.push(osc);
+      
+      // Random frequency jumps
+      const freqInterval = setInterval(() => {
+        if (osc.frequency) {
+          osc.frequency.value = 50 + Math.random() * 3000;
+        }
+      }, 50 + Math.random() * 100);
+      intervalsRef.current.push(freqInterval);
+      
       return osc;
     };
 
-    // Create alarm frequencies (classic alarm pattern)
-    createOscillator(800, 'square', 0);
-    createOscillator(600, 'square', 0.15);
-    
-    // Add a siren effect
-    const sirenOsc = ctx.createOscillator();
-    const sirenGain = ctx.createGain();
-    sirenOsc.type = 'sawtooth';
-    sirenGain.gain.value = 0.15;
-    sirenOsc.connect(sirenGain);
-    sirenGain.connect(masterGain);
-    
-    // Siren frequency sweep
-    sirenOsc.frequency.setValueAtTime(400, ctx.currentTime);
-    for (let i = 0; i < 20; i++) {
-      const time = ctx.currentTime + i * 0.5;
-      sirenOsc.frequency.linearRampToValueAtTime(800, time + 0.25);
-      sirenOsc.frequency.linearRampToValueAtTime(400, time + 0.5);
+    // Create multiple glitch oscillators
+    for (let i = 0; i < 4; i++) {
+      setTimeout(() => createGlitchOsc(), i * 200);
     }
-    
-    sirenOsc.start();
-    oscillatorsRef.current.push(sirenOsc);
 
-    // Add glitchy beeps
-    for (let i = 0; i < 30; i++) {
-      const freq = 200 + Math.random() * 1000;
-      const delay = Math.random() * 5;
-      const glitchOsc = ctx.createOscillator();
-      const glitchGain = ctx.createGain();
-      
-      glitchOsc.type = 'square';
-      glitchOsc.frequency.value = freq;
-      glitchGain.gain.value = 0.05;
-      
-      glitchOsc.connect(glitchGain);
-      glitchGain.connect(masterGain);
-      
-      glitchOsc.start(ctx.currentTime + delay);
-      glitchOsc.stop(ctx.currentTime + delay + 0.05 + Math.random() * 0.1);
+    // Add noise generator
+    const bufferSize = 2 * ctx.sampleRate;
+    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = Math.random() * 2 - 1;
     }
+    
+    const noise = ctx.createBufferSource();
+    noise.buffer = noiseBuffer;
+    noise.loop = true;
+    
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.value = 0.08;
+    noise.connect(noiseGain);
+    noiseGain.connect(masterGain);
+    noise.start();
+
+    // Bitcrusher-like effect with rapid frequency modulation
+    const bitcrushOsc = ctx.createOscillator();
+    const bitcrushGain = ctx.createGain();
+    bitcrushOsc.type = 'square';
+    bitcrushGain.gain.value = 0.15;
+    bitcrushOsc.connect(bitcrushGain);
+    bitcrushGain.connect(distortion);
+    
+    // Crazy frequency automation
+    const automate = () => {
+      const now = ctx.currentTime;
+      for (let i = 0; i < 100; i++) {
+        const time = now + i * 0.1;
+        bitcrushOsc.frequency.setValueAtTime(Math.random() * 1500 + 100, time);
+      }
+    };
+    automate();
+    bitcrushOsc.start();
+    oscillatorsRef.current.push(bitcrushOsc);
+
+    // Add stuttering bass
+    const bassOsc = ctx.createOscillator();
+    const bassGain = ctx.createGain();
+    bassOsc.type = 'sawtooth';
+    bassOsc.frequency.value = 80;
+    bassGain.gain.value = 0;
+    bassOsc.connect(bassGain);
+    bassGain.connect(masterGain);
+    bassOsc.start();
+    oscillatorsRef.current.push(bassOsc);
+    
+    // Stutter effect
+    const stutterInterval = setInterval(() => {
+      bassGain.gain.value = Math.random() > 0.5 ? 0.2 : 0;
+      bassOsc.frequency.value = [40, 60, 80, 100][Math.floor(Math.random() * 4)];
+    }, 100);
+    intervalsRef.current.push(stutterInterval);
   };
 
   const stopAlarmSound = () => {
@@ -94,6 +126,9 @@ export function useVirusSound() {
       }
     });
     oscillatorsRef.current = [];
+    
+    intervalsRef.current.forEach(interval => clearInterval(interval));
+    intervalsRef.current = [];
     
     if (audioContextRef.current) {
       audioContextRef.current.close();

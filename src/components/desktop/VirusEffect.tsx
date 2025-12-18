@@ -286,22 +286,48 @@ export function VirusEffect({ onComplete }: VirusEffectProps) {
         </div>
       )}
 
-      {/* Main warning */}
+      {/* Main warning with glitch effect */}
       {phase >= 1 && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center" style={{ animation: 'mainPulse 0.15s ease-in-out infinite' }}>
-            <div
-              className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-cyan-400 to-green-400 font-mono mb-4 tracking-wider"
-              style={{
-                textShadow: '0 0 30px #00ff00, 0 0 60px #00ff00, 0 0 90px #00ffff',
-                WebkitTextStroke: '1px rgba(0,255,0,0.5)',
-              }}
-            >
-              NOT A VIRUS
+            <div className="relative">
+              {/* Glitch layers */}
+              <div
+                className="absolute inset-0 text-7xl font-black font-mono tracking-wider text-cyan-400 opacity-70"
+                style={{
+                  animation: 'glitchText1 0.3s ease-in-out infinite',
+                  clipPath: 'polygon(0 0, 100% 0, 100% 45%, 0 45%)',
+                }}
+              >
+                NOT A VIRUS
+              </div>
+              <div
+                className="absolute inset-0 text-7xl font-black font-mono tracking-wider text-red-500 opacity-70"
+                style={{
+                  animation: 'glitchText2 0.3s ease-in-out infinite',
+                  clipPath: 'polygon(0 55%, 100% 55%, 100% 100%, 0 100%)',
+                }}
+              >
+                NOT A VIRUS
+              </div>
+              {/* Main text */}
+              <div
+                className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-cyan-400 to-green-400 font-mono mb-4 tracking-wider relative"
+                style={{
+                  textShadow: '0 0 30px #00ff00, 0 0 60px #00ff00, 0 0 90px #00ffff',
+                  WebkitTextStroke: '1px rgba(0,255,0,0.5)',
+                  animation: 'glitchMain 0.5s ease-in-out infinite',
+                }}
+              >
+                NOT A VIRUS
+              </div>
             </div>
             <div
-              className="text-2xl font-bold text-red-500 font-mono animate-pulse"
-              style={{ textShadow: '0 0 20px #ff0000, 0 0 40px #ff0000' }}
+              className="text-2xl font-bold text-red-500 font-mono"
+              style={{ 
+                textShadow: '0 0 20px #ff0000, 0 0 40px #ff0000',
+                animation: 'glitchText1 0.2s ease-in-out infinite',
+              }}
             >
               {phase === 1 && "INITIALIZING..."}
               {phase === 2 && "SYSTEM OVERRIDE IN PROGRESS"}
@@ -370,6 +396,27 @@ export function VirusEffect({ onComplete }: VirusEffectProps) {
           80% { transform: translate(0, -5%); }
           90% { transform: translate(5%, 5%); }
           100% { transform: translate(0, 0); }
+        }
+        @keyframes glitchText1 {
+          0%, 100% { transform: translate(0); }
+          20% { transform: translate(-3px, 2px); }
+          40% { transform: translate(3px, -2px); }
+          60% { transform: translate(-2px, -1px); }
+          80% { transform: translate(2px, 1px); }
+        }
+        @keyframes glitchText2 {
+          0%, 100% { transform: translate(0); }
+          20% { transform: translate(3px, -2px); }
+          40% { transform: translate(-3px, 2px); }
+          60% { transform: translate(2px, 1px); }
+          80% { transform: translate(-2px, -1px); }
+        }
+        @keyframes glitchMain {
+          0%, 90%, 100% { transform: skewX(0deg); }
+          92% { transform: skewX(2deg); }
+          94% { transform: skewX(-2deg); }
+          96% { transform: skewX(3deg); }
+          98% { transform: skewX(-1deg); }
         }
       `}</style>
     </div>
