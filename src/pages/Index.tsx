@@ -1,5 +1,5 @@
-import { useState, useEffect, forwardRef } from "react";
-import { User, FolderOpen, Code, Terminal, Globe, Bug } from "lucide-react";
+import { useState, forwardRef } from "react";
+import { User, FolderOpen, Code, Terminal, Globe } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useWindowManager } from "@/hooks/useWindowManager";
 import { Window } from "@/components/desktop/Window";
@@ -9,7 +9,7 @@ import { DesktopIcon } from "@/components/desktop/DesktopIcon";
 import { BootScreen } from "@/components/desktop/BootScreen";
 import { ShutdownDialog } from "@/components/desktop/ShutdownDialog";
 import { ShutdownScreen } from "@/components/desktop/ShutdownScreen";
-import { VirusEffect } from "@/components/desktop/VirusEffect";
+
 
 import { RandomAdsPopup } from "@/components/desktop/RandomAdsPopup";
 import { AboutApp } from "@/components/apps/AboutApp";
@@ -50,7 +50,7 @@ const Index = () => {
   const [isBooting, setIsBooting] = useState(true);
   const [showShutdown, setShowShutdown] = useState(false);
   const [isShutdown, setIsShutdown] = useState(false);
-  const [showVirus, setShowVirus] = useState(false);
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [showWelcome, setShowWelcome] = useState(true);
 
@@ -125,7 +125,6 @@ const Index = () => {
   }
 
   if (isShutdown) return <ShutdownScreen />;
-  if (showVirus) return <VirusEffect onComplete={() => setIsShutdown(true)} />;
   if (isBooting) return <BootScreen onComplete={() => setIsBooting(false)} />;
 
   return (
@@ -138,7 +137,6 @@ const Index = () => {
         {desktopApps.map((app) => (
           <DesktopIcon key={app.id} icon={app.icon} label={app.name} onDoubleClick={() => handleOpenApp(app)} />
         ))}
-        <DesktopIcon icon={Bug} label="Not a Virus" onDoubleClick={() => setShowVirus(true)} />
       </div>
 
       {windows.map((win) => (
