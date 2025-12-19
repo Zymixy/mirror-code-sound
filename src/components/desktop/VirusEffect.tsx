@@ -4,91 +4,104 @@ interface VirusEffectProps {
   onComplete: () => void;
 }
 
-interface ErrorPopup {
+interface SystemWindow {
+  id: number;
+  name: string;
+  x: number;
+  y: number;
+}
+
+interface ChaosIcon {
   id: number;
   x: number;
   y: number;
-  vx: number;
-  vy: number;
-  message: string;
+  visible: boolean;
+  duplicate: boolean;
 }
 
-const errorMessages = [
-  "VIRUS DETECTED",
-  "SYSTEM COMPROMISED", 
-  "DATA CORRUPTED",
-  "FIREWALL DISABLED",
-  "PASSWORD STOLEN",
-  "FILES ENCRYPTED",
-  "WEBCAM ACTIVATED",
-  "SENDING DATA...",
-];
-
 export function VirusEffect({ onComplete }: VirusEffectProps) {
-  const [popups, setPopups] = useState<ErrorPopup[]>([]);
-  const [screenShake, setScreenShake] = useState(0);
-  const [blueScreen, setBlueScreen] = useState(false);
-  const [glitchIntensity, setGlitchIntensity] = useState(0);
+  const [phase, setPhase] = useState(0);
+  const [terminalLines, setTerminalLines] = useState<string[]>([]);
+  const [showCursor, setShowCursor] = useState(false);
+  const [systemWindows, setSystemWindows] = useState<SystemWindow[]>([]);
+  const [glitchActive, setGlitchActive] = useState(false);
+  const [chaosIcons, setChaosIcons] = useState<ChaosIcon[]>([]);
+  const [showBigMessage, setShowBigMessage] = useState(false);
+  const [fadeOut, setFadeOut] = useState(false);
   const [showFinalMessage, setShowFinalMessage] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const animationRef = useRef<number>();
 
-  // Play sound and start animation
   useEffect(() => {
-    // Play audio
+    // Play sound
     audioRef.current = new Audio("https://www.myinstants.com/media/sounds/hello-your-computer-has-virus.mp3");
-    audioRef.current.volume = 0.6;
-    audioRef.current.play().catch(console.error);
+    audioRef.current.volume = 0.5;
+    audioRef.current.play().catch(() => {});
 
-    // Spawn error popups rapidly
-    let popupCount = 0;
-    const spawnInterval = setInterval(() => {
-      if (popupCount < 20) {
-        setPopups(prev => [...prev, {
-          id: Date.now() + Math.random(),
-          x: Math.random() * (window.innerWidth - 300),
-          y: Math.random() * (window.innerHeight - 150),
-          vx: (Math.random() - 0.5) * 8,
-          vy: (Math.random() - 0.5) * 8,
-          message: errorMessages[Math.floor(Math.random() * errorMessages.length)],
-        }]);
-        popupCount++;
-      }
-    }, 150);
+    // Initialize chaos icons
+    const icons: ChaosIcon[] = Array.from({ length: 8 }, (_, i) => ({
+      id: i,
+      x: 20 + (i % 4) * 80,
+      y: 50 + Math.floor(i / 4) * 100,
+      visible: true,
+      duplicate: false,
+    }));
+    setChaosIcons(icons);
 
-    // Increase glitch over time
-    const glitchInterval = setInterval(() => {
-      setGlitchIntensity(prev => Math.min(prev + 0.1, 1));
-    }, 200);
+    // Timeline:
+    // 0-1s: Freeze
+    // 1-4s: Terminal text
+    // 4-6s: Cursor blinking
+    // 6-9s: System windows + icon chaos
+    // 9-12s: Glitches + big message
+    // 12-14s: Fade to black
+    // 14-17s: Final message
 
-    // Screen shake
-    const shakeInterval = setInterval(() => {
-      setScreenShake(Math.random() * 10 - 5);
-    }, 50);
+    const timeline = [
+      { time: 0, action: () => setPhase(1) },
+      { time: 1000, action: () => {
+        setPhase(2);
+        typeTerminalText();
+      }},
+      { time: 4000, action: () => {
+        setPhase(3);
+        setShowCursor(true);
+      }},
+      { time: 6000, action: () => {
+        setPhase(4);
+        setShowCursor(false);
+        spawnSystemWindows();
+        startIconChaos();
+      }},
+      { time: 9000, action: () => {
+        setPhase(5);
+        setGlitchActive(true);
+        setShowBigMessage(true);
+      }},
+      { time: 12000, action: () => {
+        setPhase(6);
+        setGlitchActive(false);
+        setShowBigMessage(false);
+        setFadeOut(true);
+      }},
+      { time: 14000, action: () => {
+        setPhase(7);
+        setShowFinalMessage(true);
+      }},
+      { time: 17000, action: () => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
+        onComplete();
+      }},
+    ];
 
-    // Blue screen at 6 seconds
-    setTimeout(() => {
-      setBlueScreen(true);
-      setShowFinalMessage(true);
-    }, 6000);
-
-    // End at 8 seconds
-    setTimeout(() => {
-      clearInterval(spawnInterval);
-      clearInterval(glitchInterval);
-      clearInterval(shakeInterval);
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-      onComplete();
-    }, 8000);
+    const timeouts = timeline.map(({ time, action }) => 
+      setTimeout(action, time)
+    );
 
     return () => {
-      clearInterval(spawnInterval);
-      clearInterval(glitchInterval);
-      clearInterval(shakeInterval);
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      timeouts.forEach(clearTimeout);
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
@@ -96,167 +109,242 @@ export function VirusEffect({ onComplete }: VirusEffectProps) {
     };
   }, [onComplete]);
 
-  // Bounce animation for popups
-  useEffect(() => {
-    const animate = () => {
-      setPopups(prev => prev.map(popup => {
-        let newX = popup.x + popup.vx;
-        let newY = popup.y + popup.vy;
-        let newVx = popup.vx;
-        let newVy = popup.vy;
+  const typeTerminalText = () => {
+    const lines = [
+      "> loading process...",
+      "> checking system files",
+      "> warning: unexpected behavior detected"
+    ];
+    
+    lines.forEach((line, index) => {
+      setTimeout(() => {
+        setTerminalLines(prev => [...prev, line]);
+      }, index * 800);
+    });
+  };
 
-        if (newX <= 0 || newX >= window.innerWidth - 280) {
-          newVx = -newVx * 0.9;
-          newX = Math.max(0, Math.min(newX, window.innerWidth - 280));
-        }
-        if (newY <= 0 || newY >= window.innerHeight - 120) {
-          newVy = -newVy * 0.9;
-          newY = Math.max(0, Math.min(newY, window.innerHeight - 120));
-        }
+  const spawnSystemWindows = () => {
+    const windowNames = [
+      "error_001.log",
+      "unknown_task.tmp", 
+      "background_process.exe",
+    ];
 
-        return { ...popup, x: newX, y: newY, vx: newVx, vy: newVy };
-      }));
-      animationRef.current = requestAnimationFrame(animate);
-    };
-    animationRef.current = requestAnimationFrame(animate);
-    return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    };
-  }, []);
+    windowNames.forEach((name, index) => {
+      setTimeout(() => {
+        setSystemWindows(prev => [...prev, {
+          id: index,
+          name,
+          x: 150 + index * 50,
+          y: 100 + index * 40
+        }]);
+      }, index * 400);
+    });
+  };
 
-  if (blueScreen) {
-    return (
-      <div className="fixed inset-0 z-[9999] bg-[#0078d7] flex items-center justify-center p-8">
-        <div className="text-white max-w-2xl">
-          <div className="text-8xl mb-8">:(</div>
-          <p className="text-2xl mb-4">Your PC ran into a problem and needs to restart.</p>
-          <p className="text-lg mb-8 opacity-80">We're just collecting some error info, and then we'll restart for you.</p>
-          <div className="flex items-center gap-4 mb-8">
-            <div className="text-6xl font-bold animate-pulse">
-              {showFinalMessage ? "99%" : "0%"}
-            </div>
-            <p className="text-lg opacity-80">complete</p>
-          </div>
-          <div className="flex items-center gap-4 text-sm opacity-70">
-            <div className="w-24 h-24 border-4 border-white p-2">
-              <div className="w-full h-full bg-white/20" />
-            </div>
-            <div>
-              <p>For more information about this issue and possible fixes, visit</p>
-              <p className="mt-1">https://www.definitely-not-a-virus.com</p>
-              <p className="mt-4">If you call a support person, give them this info:</p>
-              <p className="font-mono mt-1">Stop code: TOTALLY_NOT_A_VIRUS</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const startIconChaos = () => {
+    // Randomize icons over time
+    const chaosInterval = setInterval(() => {
+      setChaosIcons(prev => prev.map(icon => ({
+        ...icon,
+        x: icon.x + (Math.random() - 0.5) * 30,
+        y: icon.y + (Math.random() - 0.5) * 30,
+        visible: Math.random() > 0.2,
+        duplicate: Math.random() > 0.7,
+      })));
+    }, 500);
+
+    setTimeout(() => clearInterval(chaosInterval), 6000);
+  };
 
   return (
     <div 
-      className="fixed inset-0 z-[9999] overflow-hidden"
-      style={{
-        transform: `translate(${screenShake}px, ${screenShake}px)`,
-        filter: `hue-rotate(${glitchIntensity * 30}deg) saturate(${1 + glitchIntensity})`,
-      }}
+      className="fixed inset-0 z-[9999] overflow-hidden bg-black"
+      style={{ cursor: phase >= 1 ? "none" : "default" }}
     >
-      {/* Red warning overlay */}
-      <div 
-        className="absolute inset-0 bg-red-600 pointer-events-none transition-opacity duration-300"
-        style={{ opacity: glitchIntensity * 0.3 }}
-      />
-
-      {/* Scanlines */}
-      <div 
-        className="absolute inset-0 pointer-events-none opacity-20"
-        style={{
-          background: 'repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)',
-        }}
-      />
-
-      {/* Error popups */}
-      {popups.map((popup) => (
-        <div
-          key={popup.id}
-          className="absolute shadow-2xl select-none"
-          style={{
-            left: popup.x,
-            top: popup.y,
-            animation: 'popupAppear 0.2s ease-out',
-          }}
-        >
-          <div className="w-[280px] bg-[#f0f0f0] border-2 border-[#dfdfdf] shadow-[2px_2px_0_#888]">
-            {/* Title bar */}
-            <div className="bg-gradient-to-r from-[#ff0000] to-[#cc0000] px-2 py-1 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-white text-lg">⚠</span>
-                <span className="text-white text-xs font-bold">System Error</span>
-              </div>
-              <button className="text-white hover:bg-red-700 px-2 text-sm">✕</button>
+      {/* Phase 2-3: Terminal with text */}
+      {phase >= 2 && phase < 5 && (
+        <div className="absolute inset-0 bg-black flex flex-col p-8 font-mono">
+          <div className="text-green-500 text-lg space-y-2">
+            {terminalLines.map((line, i) => (
+              <div key={i} className="animate-fade-in">{line}</div>
+            ))}
+          </div>
+          
+          {/* Blinking cursor */}
+          {showCursor && (
+            <div className="mt-4 text-green-500 text-lg">
+              <span className="animate-pulse">█</span>
             </div>
-            {/* Content */}
-            <div className="p-4 bg-[#f0f0f0]">
-              <div className="flex items-start gap-3">
-                <div className="text-4xl">🦠</div>
-                <div>
-                  <p className="text-sm font-bold text-red-600 mb-2">{popup.message}</p>
-                  <p className="text-xs text-gray-700">Your computer has been infected. All your data is being sent to hackers.</p>
+          )}
+        </div>
+      )}
+
+      {/* Phase 4: System windows + chaos */}
+      {phase >= 4 && phase < 6 && (
+        <div className="absolute inset-0 bg-[#008080]">
+          {/* Chaos desktop icons */}
+          {chaosIcons.map((icon) => (
+            <div key={icon.id}>
+              {icon.visible && (
+                <div
+                  className="absolute transition-all duration-500 flex flex-col items-center"
+                  style={{ left: icon.x, top: icon.y }}
+                >
+                  <div className="w-10 h-10 bg-yellow-100 border border-gray-500 flex items-center justify-center">
+                    📁
+                  </div>
+                  <span className="text-white text-xs mt-1 text-shadow">Folder</span>
+                </div>
+              )}
+              {icon.duplicate && (
+                <div
+                  className="absolute transition-all duration-500 flex flex-col items-center"
+                  style={{ left: icon.x + 20, top: icon.y + 15 }}
+                >
+                  <div className="w-10 h-10 bg-yellow-100 border border-gray-500 flex items-center justify-center">
+                    📁
+                  </div>
+                  <span className="text-white text-xs mt-1">Copy</span>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* System windows */}
+          {systemWindows.map((win, index) => (
+            <div
+              key={win.id}
+              className="absolute bg-[#c0c0c0] border-2 border-t-white border-l-white border-r-gray-700 border-b-gray-700 shadow-lg"
+              style={{
+                left: win.x,
+                top: win.y,
+                width: 300,
+                zIndex: 100 + index,
+                animation: "windowAppear 0.3s ease-out"
+              }}
+            >
+              <div className="bg-[#000080] text-white px-2 py-1 text-sm flex justify-between items-center">
+                <span className="font-bold">{win.name}</span>
+                <div className="flex gap-1">
+                  <button className="w-4 h-4 bg-[#c0c0c0] text-black text-xs leading-none">_</button>
+                  <button className="w-4 h-4 bg-[#c0c0c0] text-black text-xs leading-none">□</button>
+                  <button className="w-4 h-4 bg-[#c0c0c0] text-black text-xs leading-none">×</button>
                 </div>
               </div>
-              <div className="flex justify-end gap-2 mt-4">
-                <button className="px-4 py-1 bg-[#e0e0e0] border border-[#999] text-xs hover:bg-[#d0d0d0]">
-                  Panic
-                </button>
-                <button className="px-4 py-1 bg-[#e0e0e0] border border-[#999] text-xs hover:bg-[#d0d0d0]">
-                  Cry
-                </button>
+              <div className="p-3 bg-white text-black text-xs font-mono h-28 overflow-hidden">
+                <div className="text-red-600 font-bold">ERROR: Unknown process</div>
+                <div className="mt-1">Address: 0x{Math.random().toString(16).slice(2, 10).toUpperCase()}</div>
+                <div className="mt-1">Status: CORRUPTED</div>
+                <div className="mt-2 text-gray-500">───────────────────</div>
+                <div className="text-orange-600">Memory access violation</div>
               </div>
             </div>
+          ))}
+
+          {/* Frozen clock */}
+          <div className="absolute bottom-2 right-2 bg-[#c0c0c0] px-3 py-1 border-2 border-t-white border-l-white border-r-gray-700 border-b-gray-700">
+            <span className="font-mono text-sm text-red-600 font-bold">12:00</span>
           </div>
         </div>
-      ))}
+      )}
 
-      {/* Glitch bars */}
-      {glitchIntensity > 0.3 && Array.from({ length: 5 }).map((_, i) => (
-        <div
-          key={i}
-          className="absolute left-0 right-0 bg-cyan-500/30 pointer-events-none"
+      {/* Phase 5: Glitches + big message */}
+      {phase >= 5 && phase < 6 && (
+        <div className="absolute inset-0 bg-black">
+          {/* Glitch lines */}
+          {glitchActive && Array.from({ length: 10 }, (_, i) => (
+            <div
+              key={i}
+              className="absolute h-1 bg-green-500"
+              style={{
+                top: `${10 + i * 9}%`,
+                left: 0,
+                right: 0,
+                opacity: 0.4 + Math.random() * 0.4,
+                transform: `translateX(${(Math.random() - 0.5) * 40}px)`,
+                animation: `glitchLine ${0.05 + Math.random() * 0.1}s infinite`
+              }}
+            />
+          ))}
+
+          {/* Flickering overlay */}
+          <div 
+            className="absolute inset-0 bg-white pointer-events-none"
+            style={{ 
+              opacity: 0.05,
+              animation: "flicker 0.15s infinite"
+            }}
+          />
+
+          {/* Big center message */}
+          {showBigMessage && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div 
+                className="text-green-500 text-3xl md:text-5xl lg:text-6xl font-mono font-bold tracking-widest text-center px-4"
+                style={{
+                  textShadow: "0 0 10px #00ff00, 0 0 20px #00ff00",
+                  animation: "textGlitch 0.5s infinite"
+                }}
+              >
+                PROCESS STILL RUNNING
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Phase 6: Fade to black */}
+      {phase >= 6 && !showFinalMessage && (
+        <div 
+          className="absolute inset-0 bg-black"
           style={{
-            top: `${Math.random() * 100}%`,
-            height: `${2 + Math.random() * 10}px`,
-            transform: `translateX(${(Math.random() - 0.5) * 20}px)`,
-            opacity: glitchIntensity,
+            animation: "fadeIn 2s ease-out forwards"
           }}
         />
-      ))}
+      )}
 
-      {/* Central warning */}
-      {glitchIntensity > 0.5 && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+      {/* Phase 7: Final message */}
+      {showFinalMessage && (
+        <div className="absolute inset-0 bg-black flex items-center justify-center">
           <div 
-            className="text-red-500 text-6xl font-black font-mono animate-pulse"
-            style={{
-              textShadow: '0 0 20px red, 0 0 40px red, 0 0 60px red',
-              animation: 'glitchText 0.1s infinite',
-            }}
+            className="text-white text-xl md:text-3xl lg:text-4xl font-mono tracking-wide"
+            style={{ animation: "fadeIn 1s ease-out" }}
           >
-            ⚠ VIRUS DETECTED ⚠
+            SYSTEM STATUS: UNKNOWN
           </div>
         </div>
       )}
 
       <style>{`
-        @keyframes popupAppear {
-          0% { transform: scale(0) rotate(10deg); opacity: 0; }
-          50% { transform: scale(1.1) rotate(-2deg); }
-          100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        @keyframes windowAppear {
+          0% { transform: scale(0.8); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
         }
-        @keyframes glitchText {
+        @keyframes glitchLine {
+          0%, 100% { transform: translateX(0); opacity: 0.5; }
+          25% { transform: translateX(-10px); opacity: 0.8; }
+          50% { transform: translateX(15px); opacity: 0.3; }
+          75% { transform: translateX(-5px); opacity: 0.7; }
+        }
+        @keyframes flicker {
+          0%, 100% { opacity: 0.03; }
+          50% { opacity: 0.08; }
+        }
+        @keyframes textGlitch {
           0%, 100% { transform: translate(0); }
-          25% { transform: translate(-2px, 1px); }
-          50% { transform: translate(2px, -1px); }
-          75% { transform: translate(-1px, -1px); }
+          10% { transform: translate(-2px, 1px); }
+          30% { transform: translate(2px, -2px); }
+          50% { transform: translate(-1px, 2px); }
+          70% { transform: translate(3px, 1px); }
+          90% { transform: translate(-2px, -1px); }
+        }
+        @keyframes fadeIn {
+          0% { opacity: 0; }
+          100% { opacity: 1; }
+        }
+        .text-shadow {
+          text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
         }
       `}</style>
     </div>
