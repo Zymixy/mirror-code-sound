@@ -1,5 +1,5 @@
 import { useState, forwardRef } from "react";
-import { User, FolderOpen, Code, Terminal, Globe } from "lucide-react";
+import { User, FolderOpen, Code, Terminal, Globe, Gamepad2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useWindowManager } from "@/hooks/useWindowManager";
 import { Window } from "@/components/desktop/Window";
@@ -18,6 +18,7 @@ import { SkillsApp } from "@/components/apps/SkillsApp";
 import { ContactApp } from "@/components/apps/ContactApp";
 import { TerminalApp } from "@/components/apps/TerminalApp";
 import { BrowserApp } from "@/components/apps/BrowserApp";
+import { GeometryDashApp } from "@/components/apps/GeometryDashApp";
 
 interface AppConfig {
   id: string;
@@ -40,9 +41,10 @@ const apps: AppConfig[] = [
   { id: "contact", name: "Contact", icon: DiscordIcon, component: "contact" },
   { id: "terminal", name: "Terminal", icon: Terminal, component: "terminal" },
   { id: "browser", name: "Browser", icon: Globe, component: "browser" },
+  { id: "geometrydash", name: "Geometry Dash", icon: Gamepad2, component: "geometrydash" },
 ];
 
-const desktopApps = apps.slice(0, 4);
+const desktopApps = [...apps.slice(0, 4), apps.find(a => a.id === "geometrydash")!];
 
 const Index = () => {
   const [isStartOpen, setIsStartOpen] = useState(false);
@@ -102,6 +104,7 @@ const Index = () => {
       case "contact": return <ContactApp />;
       case "terminal": return <TerminalApp />;
       case "browser": return <BrowserApp initialSearch={searchQuery} />;
+      case "geometrydash": return <GeometryDashApp />;
       default: return null;
     }
   };
