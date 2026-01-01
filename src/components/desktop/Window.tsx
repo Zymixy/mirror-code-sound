@@ -78,9 +78,7 @@ export function Window({
   return (
     <div
       ref={windowRef}
-      className={`absolute rounded-lg overflow-hidden window-shadow animate-window-open ${
-        isFocused ? "ring-1 ring-primary/30" : ""
-      }`}
+      className="absolute rounded-lg overflow-hidden window-shadow animate-window-open"
       style={{
         left: win.isMaximized ? 0 : win.position.x,
         top: win.isMaximized ? 0 : win.position.y,
