@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, memo } from "react";
 
 interface Ad {
   id: number;
@@ -27,25 +27,20 @@ interface PopupAd {
   y: number;
 }
 
-// Sound URL for "You've got mail"
 const MAIL_SOUND_URL = "https://www.myinstants.com/media/sounds/yougotmail.mp3";
 
 const playMailSound = () => {
   const audio = new Audio(MAIL_SOUND_URL);
   audio.volume = 0.3;
-  audio.play().catch((e) => console.log("Audio play error:", e));
+  audio.play().catch(() => {});
 };
 
-export function RandomAdsPopup() {
+export const RandomAdsPopup = memo(function RandomAdsPopup() {
   const [popups, setPopups] = useState<PopupAd[]>([]);
   const [dragging, setDragging] = useState<number | null>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
 
-  const getRandomInterval = () => {
-    return 15000 + Math.random() * 10000; // 15-25 seconds
-  };
-
-  const addRandomAd = () => {
+  const addRandomAd = useCallback(() => {
     const randomAd = jokeAds[Math.floor(Math.random() * jokeAds.length)];
     const newPopup: PopupAd = {
       id: Date.now(),
@@ -55,15 +50,12 @@ export function RandomAdsPopup() {
     };
     setPopups(prev => [...prev.slice(-3), newPopup]);
     playMailSound();
-  };
+  }, []);
 
   useEffect(() => {
-    // Initial popup after 5 seconds
-    const initialTimer = setTimeout(() => {
-      addRandomAd();
-    }, 5000);
-
-    // Schedule next popup with random interval
+    const initialTimer = setTimeout(addRandomAd, 5000);
+    
+    const getRandomInterval = () => 15000 + Math.random() * 10000;
     let timeoutId: NodeJS.Timeout;
     
     const scheduleNext = () => {
@@ -79,7 +71,7 @@ export function RandomAdsPopup() {
       clearTimeout(initialTimer);
       clearTimeout(timeoutId);
     };
-  }, []);
+  }, [addRandomAd]);
 
   useEffect(() => {
     if (dragging === null) return;
@@ -92,9 +84,7 @@ export function RandomAdsPopup() {
       ));
     };
 
-    const handleMouseUp = () => {
-      setDragging(null);
-    };
+    const handleMouseUp = () => setDragging(null);
 
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
@@ -105,33 +95,25 @@ export function RandomAdsPopup() {
     };
   }, [dragging]);
 
-  const closePopup = (id: number) => {
+  const closePopup = useCallback((id: number) => {
     setPopups(prev => prev.filter(p => p.id !== id));
-  };
+  }, []);
 
-  const handleMouseDown = (e: React.MouseEvent, popup: PopupAd) => {
+  const handleMouseDown = useCallback((e: React.MouseEvent, popup: PopupAd) => {
     e.preventDefault();
-    dragOffset.current = {
-      x: e.clientX - popup.x,
-      y: e.clientY - popup.y,
-    };
+    dragOffset.current = { x: e.clientX - popup.x, y: e.clientY - popup.y };
     setDragging(popup.id);
-  };
+  }, []);
 
   return (
     <>
       {popups.map((popup) => (
         <div
           key={popup.id}
-          className="fixed z-[200] pointer-events-auto select-none"
-          style={{
-            left: popup.x,
-            top: popup.y,
-            animation: dragging === popup.id ? 'none' : 'adPopIn 0.3s ease-out',
-          }}
+          className="fixed z-[200] pointer-events-auto select-none animate-fade-in"
+          style={{ left: popup.x, top: popup.y }}
         >
           <div className="w-[240px] bg-[#c0c0c0] border-2 border-t-[#dfdfdf] border-l-[#dfdfdf] border-r-[#404040] border-b-[#404040] shadow-[2px_2px_0_#000]">
-            {/* Win95 title bar */}
             <div 
               className="flex items-center justify-between px-1 py-0.5 bg-[#000080] cursor-move"
               onMouseDown={(e) => handleMouseDown(e, popup)}
@@ -145,7 +127,6 @@ export function RandomAdsPopup() {
               </button>
             </div>
             
-            {/* Content */}
             <div className="p-2 bg-[#c0c0c0]">
               <p className="text-[10px] font-bold text-[#800000] mb-1 leading-tight">
                 {popup.ad.title}
@@ -158,13 +139,6 @@ export function RandomAdsPopup() {
           </div>
         </div>
       ))}
-
-      <style>{`
-        @keyframes adPopIn {
-          0% { opacity: 0; transform: scale(0.9); }
-          100% { opacity: 1; transform: scale(1); }
-        }
-      `}</style>
     </>
   );
-}
+});

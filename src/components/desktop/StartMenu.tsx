@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, memo } from "react";
 import { Search, Power, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -16,24 +16,27 @@ interface StartMenuProps {
   onShutdown: () => void;
 }
 
-export function StartMenu({ apps, onAppClick, onClose, onShutdown }: StartMenuProps) {
+export const StartMenu = memo(function StartMenu({ 
+  apps, 
+  onAppClick, 
+  onClose, 
+  onShutdown 
+}: StartMenuProps) {
   const [search, setSearch] = useState("");
 
-  const filteredApps = apps.filter((app) =>
-    app.name.toLowerCase().includes(search.toLowerCase())
+  const filteredApps = useMemo(() => 
+    apps.filter((app) => app.name.toLowerCase().includes(search.toLowerCase())),
+    [apps, search]
   );
 
-  const pinnedApps = apps.slice(0, 6);
-  const recommendedApps = apps.slice(0, 4);
+  const pinnedApps = useMemo(() => apps.slice(0, 6), [apps]);
+  const recommendedApps = useMemo(() => apps.slice(0, 3), [apps]);
 
   return (
     <>
-      {/* Backdrop */}
       <div className="fixed inset-0 z-[998]" onClick={onClose} />
 
-      {/* Menu - positioned at bottom left */}
       <div className="fixed bottom-14 left-2 w-[320px] bg-card/95 start-menu-blur rounded-lg window-shadow z-[999] animate-slide-up overflow-hidden">
-        {/* Search */}
         <div className="p-3 pb-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -48,7 +51,6 @@ export function StartMenu({ apps, onAppClick, onClose, onShutdown }: StartMenuPr
           </div>
         </div>
 
-        {/* Content */}
         {search ? (
           <div className="p-3 pt-1 max-h-[300px] overflow-y-auto custom-scrollbar">
             <div className="grid grid-cols-3 gap-1">
@@ -66,11 +68,8 @@ export function StartMenu({ apps, onAppClick, onClose, onShutdown }: StartMenuPr
           </div>
         ) : (
           <>
-            {/* Pinned */}
             <div className="p-3 pt-1 max-h-[200px] overflow-y-auto custom-scrollbar">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium">Pinned</span>
-              </div>
+              <span className="text-xs font-medium mb-2 block">Pinned</span>
               <div className="grid grid-cols-3 gap-1">
                 {pinnedApps.map((app) => (
                   <button
@@ -85,13 +84,10 @@ export function StartMenu({ apps, onAppClick, onClose, onShutdown }: StartMenuPr
               </div>
             </div>
 
-            {/* Recommended */}
             <div className="p-3 pt-0 max-h-[150px] overflow-y-auto custom-scrollbar">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium">Recommended</span>
-              </div>
+              <span className="text-xs font-medium mb-2 block">Recommended</span>
               <div className="space-y-0.5">
-                {recommendedApps.slice(0, 3).map((app) => (
+                {recommendedApps.map((app) => (
                   <button
                     key={app.id}
                     onClick={() => onAppClick(app)}
@@ -109,7 +105,6 @@ export function StartMenu({ apps, onAppClick, onClose, onShutdown }: StartMenuPr
           </>
         )}
 
-        {/* Footer */}
         <div className="flex items-center justify-between p-3 border-t border-border/50">
           <button className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-secondary transition-colors">
             <User className="w-5 h-5 p-0.5 bg-primary text-primary-foreground rounded-full" />
@@ -125,4 +120,4 @@ export function StartMenu({ apps, onAppClick, onClose, onShutdown }: StartMenuPr
       </div>
     </>
   );
-}
+});

@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 
 interface BootScreenProps {
   onComplete: () => void;
 }
 
-export function BootScreen({ onComplete }: BootScreenProps) {
+export const BootScreen = memo(function BootScreen({ onComplete }: BootScreenProps) {
   const [showLogo, setShowLogo] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
 
@@ -22,7 +22,7 @@ export function BootScreen({ onComplete }: BootScreenProps) {
 
   return (
     <div
-      className={`fixed inset-0 bg-black flex items-center justify-center z-[9999] transition-opacity duration-700 ${
+      className={`fixed inset-0 bg-background flex items-center justify-center z-[9999] transition-opacity duration-700 ${
         fadeOut ? "opacity-0" : "opacity-100"
       }`}
     >
@@ -31,10 +31,10 @@ export function BootScreen({ onComplete }: BootScreenProps) {
           showLogo ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-4"
         }`}
       >
-        <div className="text-5xl font-light text-white tracking-[0.3em]">
+        <div className="text-5xl font-light text-foreground tracking-[0.3em]">
           ZymixyOS
         </div>
       </div>
     </div>
   );
-}
+});

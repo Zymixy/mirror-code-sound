@@ -1,4 +1,4 @@
-import { useState, forwardRef } from "react";
+import { useState, useCallback, useMemo, memo, forwardRef } from "react";
 import { User, FolderOpen, Code, Terminal, Globe } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useWindowManager } from "@/hooks/useWindowManager";
@@ -9,8 +9,6 @@ import { DesktopIcon } from "@/components/desktop/DesktopIcon";
 import { BootScreen } from "@/components/desktop/BootScreen";
 import { ShutdownDialog } from "@/components/desktop/ShutdownDialog";
 import { ShutdownScreen } from "@/components/desktop/ShutdownScreen";
-
-
 import { RandomAdsPopup } from "@/components/desktop/RandomAdsPopup";
 import { AboutApp } from "@/components/apps/AboutApp";
 import { ProjectsApp } from "@/components/apps/ProjectsApp";
@@ -18,7 +16,6 @@ import { SkillsApp } from "@/components/apps/SkillsApp";
 import { ContactApp } from "@/components/apps/ContactApp";
 import { TerminalApp } from "@/components/apps/TerminalApp";
 import { BrowserApp } from "@/components/apps/BrowserApp";
-
 
 interface AppConfig {
   id: string;
@@ -45,38 +42,55 @@ const apps: AppConfig[] = [
 
 const desktopApps = apps.slice(0, 4);
 
+const APP_COMPONENTS: Record<string, React.ComponentType<any>> = {
+  about: AboutApp,
+  projects: ProjectsApp,
+  skills: SkillsApp,
+  contact: ContactApp,
+  terminal: TerminalApp,
+  browser: BrowserApp,
+};
+
 const Index = () => {
   const [isStartOpen, setIsStartOpen] = useState(false);
-  const [wallpaper, setWallpaper] = useState("solid-black");
   const [isBooting, setIsBooting] = useState(true);
   const [showShutdown, setShowShutdown] = useState(false);
   const [isShutdown, setIsShutdown] = useState(false);
-  
   const [searchQuery, setSearchQuery] = useState("");
   const [showWelcome, setShowWelcome] = useState(true);
 
-  const handleContinue = () => {
+  const {
+    windows,
+    focusedWindow,
+    openWindow,
+    closeWindow,
+    minimizeWindow,
+    maximizeWindow,
+    focusWindow,
+    updatePosition,
+    updateSize,
+  } = useWindowManager();
+
+  const handleContinue = useCallback(() => {
     document.documentElement.requestFullscreen?.().catch(() => {});
     setShowWelcome(false);
-  };
+  }, []);
 
-  const { windows, focusedWindow, openWindow, closeWindow, minimizeWindow, maximizeWindow, focusWindow, updatePosition, updateSize } = useWindowManager();
-
-  const handleOpenApp = (app: AppConfig) => {
+  const handleOpenApp = useCallback((app: AppConfig) => {
     openWindow(app.id, app.name, app.icon, app.component);
     setIsStartOpen(false);
-  };
+  }, [openWindow]);
 
-  const handleSearch = (query: string) => {
+  const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
     const browserApp = apps.find(a => a.id === "browser");
     if (browserApp) {
       openWindow(browserApp.id, browserApp.name, browserApp.icon, browserApp.component);
       setIsStartOpen(false);
     }
-  };
+  }, [openWindow]);
 
-  const handleTaskbarWindowClick = (id: string) => {
+  const handleTaskbarWindowClick = useCallback((id: string) => {
     const win = windows.find((w) => w.id === id);
     if (win?.isMinimized) {
       const app = apps.find(a => a.id === win.id);
@@ -86,37 +100,58 @@ const Index = () => {
     } else {
       focusWindow(id);
     }
-  };
+  }, [windows, focusedWindow, openWindow, minimizeWindow, focusWindow]);
 
-  const handleShutdownConfirm = () => {
+  const handleShutdownConfirm = useCallback(() => {
     setShowShutdown(false);
     setIsShutdown(true);
-  };
+  }, []);
 
-  const currentWallpaper = null;
+  const handleStartClick = useCallback(() => {
+    setIsStartOpen(prev => !prev);
+  }, []);
 
-  const renderAppContent = (component: string) => {
-    switch (component) {
-      case "about": return <AboutApp />;
-      case "projects": return <ProjectsApp />;
-      case "skills": return <SkillsApp />;
-      case "contact": return <ContactApp />;
-      case "terminal": return <TerminalApp />;
-      case "browser": return <BrowserApp initialSearch={searchQuery} />;
-      default: return null;
-    }
-  };
+  const handleCloseStart = useCallback(() => {
+    setIsStartOpen(false);
+  }, []);
 
-  const windowsWithIcons = windows.map(win => ({ ...win, iconComponent: apps.find(a => a.id === win.id)?.icon }));
+  const handleShowShutdown = useCallback(() => {
+    setIsStartOpen(false);
+    setShowShutdown(true);
+  }, []);
+
+  const handleBootComplete = useCallback(() => {
+    setIsBooting(false);
+  }, []);
+
+  const handleCancelShutdown = useCallback(() => {
+    setShowShutdown(false);
+  }, []);
+
+  const windowsWithIcons = useMemo(() => 
+    windows.map(win => ({
+      ...win,
+      iconComponent: apps.find(a => a.id === win.id)?.icon
+    })),
+    [windows]
+  );
+
+  const renderAppContent = useCallback((component: string) => {
+    const Component = APP_COMPONENTS[component];
+    if (!Component) return null;
+    return component === "browser" 
+      ? <Component initialSearch={searchQuery} />
+      : <Component />;
+  }, [searchQuery]);
 
   if (showWelcome) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-black">
+      <div className="h-screen w-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <h1 className="text-3xl font-light text-white mb-8 tracking-wide">Desktop Simulator</h1>
+          <h1 className="text-3xl font-light text-foreground mb-8 tracking-wide">Desktop Simulator</h1>
           <button
             onClick={handleContinue}
-            className="px-8 py-2.5 bg-white hover:bg-gray-100 text-black font-medium rounded transition-all duration-200 hover:scale-105"
+            className="px-8 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded transition-all duration-200 hover:scale-105"
           >
             Continue
           </button>
@@ -126,31 +161,65 @@ const Index = () => {
   }
 
   if (isShutdown) return <ShutdownScreen />;
-  if (isBooting) return <BootScreen onComplete={() => setIsBooting(false)} />;
+  if (isBooting) return <BootScreen onComplete={handleBootComplete} />;
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-background">
-      {/* Random ads popups */}
       <RandomAdsPopup />
-
 
       <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
         {desktopApps.map((app) => (
-          <DesktopIcon key={app.id} icon={app.icon} label={app.name} onDoubleClick={() => handleOpenApp(app)} />
+          <DesktopIcon
+            key={app.id}
+            icon={app.icon}
+            label={app.name}
+            onDoubleClick={() => handleOpenApp(app)}
+          />
         ))}
       </div>
 
       {windows.map((win) => (
-        <Window key={win.id} window={win} isFocused={focusedWindow === win.id} onClose={() => closeWindow(win.id)} onMinimize={() => minimizeWindow(win.id)} onMaximize={() => maximizeWindow(win.id)} onFocus={() => focusWindow(win.id)} onPositionChange={(pos) => updatePosition(win.id, pos)} onSizeChange={(size) => updateSize(win.id, size)}>
+        <Window
+          key={win.id}
+          window={win}
+          isFocused={focusedWindow === win.id}
+          onClose={() => closeWindow(win.id)}
+          onMinimize={() => minimizeWindow(win.id)}
+          onMaximize={() => maximizeWindow(win.id)}
+          onFocus={() => focusWindow(win.id)}
+          onPositionChange={(pos) => updatePosition(win.id, pos)}
+          onSizeChange={(size) => updateSize(win.id, size)}
+        >
           {renderAppContent(win.component)}
         </Window>
       ))}
 
-      {isStartOpen && <StartMenu apps={apps} onAppClick={handleOpenApp} onClose={() => setIsStartOpen(false)} onShutdown={() => { setIsStartOpen(false); setShowShutdown(true); }} />}
-      {showShutdown && <ShutdownDialog onConfirm={handleShutdownConfirm} onCancel={() => setShowShutdown(false)} />}
-      <Taskbar windows={windowsWithIcons} focusedWindow={focusedWindow} onStartClick={() => setIsStartOpen(!isStartOpen)} onWindowClick={handleTaskbarWindowClick} onSearch={handleSearch} isStartOpen={isStartOpen} />
+      {isStartOpen && (
+        <StartMenu
+          apps={apps}
+          onAppClick={handleOpenApp}
+          onClose={handleCloseStart}
+          onShutdown={handleShowShutdown}
+        />
+      )}
+
+      {showShutdown && (
+        <ShutdownDialog
+          onConfirm={handleShutdownConfirm}
+          onCancel={handleCancelShutdown}
+        />
+      )}
+
+      <Taskbar
+        windows={windowsWithIcons}
+        focusedWindow={focusedWindow}
+        onStartClick={handleStartClick}
+        onWindowClick={handleTaskbarWindowClick}
+        onSearch={handleSearch}
+        isStartOpen={isStartOpen}
+      />
     </div>
   );
 };
 
-export default Index;
+export default memo(Index);
