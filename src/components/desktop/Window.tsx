@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback, memo } from "react";
 import { X, Minus, Square, Copy } from "lucide-react";
 import { WindowState } from "@/hooks/useWindowManager";
 
@@ -14,7 +14,7 @@ interface WindowProps {
   children: React.ReactNode;
 }
 
-export function Window({
+export const Window = memo(function Window({
   window: win,
   isFocused,
   onClose,
@@ -28,22 +28,24 @@ export function Window({
   const windowRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const dragOffset = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
+    if (!isDragging && !isResizing) return;
+
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging && !win.isMaximized) {
-        const newX = e.clientX - dragOffset.x;
-        const newY = Math.max(0, e.clientY - dragOffset.y);
-        onPositionChange({ x: newX, y: newY });
+        onPositionChange({
+          x: e.clientX - dragOffset.current.x,
+          y: Math.max(0, e.clientY - dragOffset.current.y),
+        });
       }
-      if (isResizing && !win.isMaximized) {
-        const rect = windowRef.current?.getBoundingClientRect();
-        if (rect) {
-          const newWidth = Math.max(400, e.clientX - rect.left);
-          const newHeight = Math.max(300, e.clientY - rect.top);
-          onSizeChange({ width: newWidth, height: newHeight });
-        }
+      if (isResizing && !win.isMaximized && windowRef.current) {
+        const rect = windowRef.current.getBoundingClientRect();
+        onSizeChange({
+          width: Math.max(400, e.clientX - rect.left),
+          height: Math.max(300, e.clientY - rect.top),
+        });
       }
     };
 
@@ -52,26 +54,29 @@ export function Window({
       setIsResizing(false);
     };
 
-    if (isDragging || isResizing) {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-    }
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
 
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, isResizing, dragOffset, win.isMaximized, onPositionChange, onSizeChange]);
+  }, [isDragging, isResizing, win.isMaximized, onPositionChange, onSizeChange]);
 
-  const handleHeaderMouseDown = (e: React.MouseEvent) => {
+  const handleHeaderMouseDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
     onFocus();
     setIsDragging(true);
-    const rect = windowRef.current?.getBoundingClientRect();
-    if (rect) {
-      setDragOffset({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    if (windowRef.current) {
+      const rect = windowRef.current.getBoundingClientRect();
+      dragOffset.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     }
-  };
+  }, [onFocus]);
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsResizing(true);
+  }, []);
 
   if (win.isMinimized) return null;
 
@@ -88,7 +93,6 @@ export function Window({
       }}
       onMouseDown={onFocus}
     >
-      {/* Header */}
       <div
         className="h-10 bg-card flex items-center justify-between px-3 cursor-move select-none"
         onMouseDown={handleHeaderMouseDown}
@@ -120,19 +124,16 @@ export function Window({
         </div>
       </div>
 
-      {/* Content */}
-      <div className="bg-card h-[calc(100%-40px)] overflow-auto custom-scrollbar">{children}</div>
+      <div className="bg-card h-[calc(100%-40px)] overflow-auto custom-scrollbar">
+        {children}
+      </div>
 
-      {/* Resize handle */}
       {!win.isMaximized && (
         <div
           className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
-          onMouseDown={(e) => {
-            e.stopPropagation();
-            setIsResizing(true);
-          }}
+          onMouseDown={handleResizeStart}
         />
       )}
     </div>
   );
-}
+});
