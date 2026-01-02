@@ -123,6 +123,22 @@ export function BrowserApp({ initialSearch = "" }: BrowserAppProps) {
                 />
               </div>
 
+              <div className="text-left">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">Recent searches</h3>
+                <div className="space-y-2">
+                  {["do girls poop?", "67 meme", "shrek pics bikini"].map((term) => (
+                    <button
+                      key={term}
+                      onClick={() => navigate(term)}
+                      className="flex items-center gap-3 w-full px-3 py-2 rounded-lg hover:bg-secondary transition-colors text-left"
+                    >
+                      <Search className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm">{term}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
             </div>
           </div>
         ) : (
