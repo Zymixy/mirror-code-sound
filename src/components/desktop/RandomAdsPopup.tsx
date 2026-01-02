@@ -53,9 +53,9 @@ export const RandomAdsPopup = memo(function RandomAdsPopup() {
   }, []);
 
   useEffect(() => {
-    const initialTimer = setTimeout(addRandomAd, 5000);
+    const initialTimer = setTimeout(addRandomAd, 30000);
     
-    const getRandomInterval = () => 15000 + Math.random() * 10000;
+    const getRandomInterval = () => 30000 + Math.random() * 30000;
     let timeoutId: NodeJS.Timeout;
     
     const scheduleNext = () => {
