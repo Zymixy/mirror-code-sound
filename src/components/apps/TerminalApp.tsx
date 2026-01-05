@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { useIsMobile } from "@/hooks/use-mobile";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -7,6 +6,38 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+// Detección robusta de móvil/tablet
+function useIsMobileOrTablet() {
+  const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
+
+  useEffect(() => {
+    const checkDevice = () => {
+      // Detectar por user agent
+      const userAgent = navigator.userAgent.toLowerCase();
+      const mobileKeywords = [
+        'android', 'webos', 'iphone', 'ipad', 'ipod', 'blackberry', 
+        'windows phone', 'opera mini', 'mobile', 'tablet', 'silk'
+      ];
+      const isMobileUA = mobileKeywords.some(keyword => userAgent.includes(keyword));
+      
+      // Detectar por pantalla táctil
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      
+      // Detectar por ancho de pantalla (tablets pueden tener hasta 1024px)
+      const isSmallScreen = window.innerWidth < 1024;
+      
+      // Es móvil/tablet si cumple cualquiera de estas condiciones
+      setIsMobileOrTablet(isMobileUA || (isTouchDevice && isSmallScreen));
+    };
+
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    return () => window.removeEventListener('resize', checkDevice);
+  }, []);
+
+  return isMobileOrTablet;
+}
 
 const fileSystem: Record<string, string[]> = {
   "/": ["home", "usr", "etc", "var", "bin", "tmp"],
@@ -45,7 +76,7 @@ const quotes = [
 
 
 export function TerminalApp() {
-  const isMobile = useIsMobile();
+  const isMobileOrTablet = useIsMobileOrTablet();
   const [lines, setLines] = useState<string[]>([
     "╔══════════════════════════════════════════╗",
     "║     Zymixy Terminal v3.0 - ZymOS         ║",
@@ -374,7 +405,7 @@ export function TerminalApp() {
     }
   };
 
-  if (isMobile) {
+  if (isMobileOrTablet) {
     return (
       <AlertDialog open={true}>
         <AlertDialogContent className="bg-black border-green-500 border-2">
