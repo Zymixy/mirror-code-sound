@@ -30,6 +30,7 @@ export const Window = memo(function Window({
   const [isResizing, setIsResizing] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
 
+  // Mouse events
   useEffect(() => {
     if (!isDragging && !isResizing) return;
 
@@ -63,6 +64,47 @@ export const Window = memo(function Window({
     };
   }, [isDragging, isResizing, win.isMaximized, onPositionChange, onSizeChange]);
 
+  // Touch events for mobile/tablet
+  useEffect(() => {
+    if (!isDragging && !isResizing) return;
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      
+      if (isDragging && !win.isMaximized) {
+        e.preventDefault();
+        onPositionChange({
+          x: touch.clientX - dragOffset.current.x,
+          y: Math.max(0, touch.clientY - dragOffset.current.y),
+        });
+      }
+      if (isResizing && !win.isMaximized && windowRef.current) {
+        e.preventDefault();
+        const rect = windowRef.current.getBoundingClientRect();
+        onSizeChange({
+          width: Math.max(300, touch.clientX - rect.left),
+          height: Math.max(200, touch.clientY - rect.top),
+        });
+      }
+    };
+
+    const handleTouchEnd = () => {
+      setIsDragging(false);
+      setIsResizing(false);
+    };
+
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
+    document.addEventListener("touchend", handleTouchEnd);
+    document.addEventListener("touchcancel", handleTouchEnd);
+
+    return () => {
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", handleTouchEnd);
+      document.removeEventListener("touchcancel", handleTouchEnd);
+    };
+  }, [isDragging, isResizing, win.isMaximized, onPositionChange, onSizeChange]);
+
   const handleHeaderMouseDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
     onFocus();
@@ -73,8 +115,27 @@ export const Window = memo(function Window({
     }
   }, [onFocus]);
 
+  const handleHeaderTouchStart = useCallback((e: React.TouchEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+    if (e.touches.length !== 1) return;
+    
+    const touch = e.touches[0];
+    onFocus();
+    setIsDragging(true);
+    if (windowRef.current) {
+      const rect = windowRef.current.getBoundingClientRect();
+      dragOffset.current = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+    }
+  }, [onFocus]);
+
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    setIsResizing(true);
+  }, []);
+
+  const handleResizeTouchStart = useCallback((e: React.TouchEvent) => {
+    e.stopPropagation();
+    if (e.touches.length !== 1) return;
     setIsResizing(true);
   }, []);
 
@@ -92,10 +153,12 @@ export const Window = memo(function Window({
         zIndex: win.zIndex,
       }}
       onMouseDown={onFocus}
+      onTouchStart={onFocus}
     >
       <div
-        className="h-10 bg-card flex items-center justify-between px-3 cursor-move select-none"
+        className="h-10 bg-card flex items-center justify-between px-3 cursor-move select-none touch-none"
         onMouseDown={handleHeaderMouseDown}
+        onTouchStart={handleHeaderTouchStart}
         onDoubleClick={onMaximize}
       >
         <div className="flex items-center gap-2">
@@ -130,9 +193,12 @@ export const Window = memo(function Window({
 
       {!win.isMaximized && (
         <div
-          className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
+          className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize touch-none"
           onMouseDown={handleResizeStart}
-        />
+          onTouchStart={handleResizeTouchStart}
+        >
+          <div className="absolute bottom-1 right-1 w-3 h-3 border-r-2 border-b-2 border-muted-foreground/50" />
+        </div>
       )}
     </div>
   );
