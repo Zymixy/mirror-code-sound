@@ -1,4 +1,12 @@
 import { useState, useRef, useEffect } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const fileSystem: Record<string, string[]> = {
   "/": ["home", "usr", "etc", "var", "bin", "tmp"],
@@ -35,15 +43,9 @@ const quotes = [
   "Programming is not about typing, it's about thinking. - Rich Hickey",
 ];
 
-const jokes = [
-  "Why do programmers prefer dark mode? Because light attracts bugs!",
-  "There are only 10 types of people in the world: those who understand binary and those who don't.",
-  "A SQL query walks into a bar, walks up to two tables and asks... 'Can I join you?'",
-  "Why do Java developers wear glasses? Because they can't C#!",
-  "How many programmers does it take to change a light bulb? None, that's a hardware problem!",
-];
 
 export function TerminalApp() {
+  const isMobile = useIsMobile();
   const [lines, setLines] = useState<string[]>([
     "╔══════════════════════════════════════════╗",
     "║     Zymixy Terminal v3.0 - ZymOS         ║",
@@ -98,13 +100,11 @@ export function TerminalApp() {
           "│  history       Show command history     │",
           "│  uname         System information       │",
           "│  fortune       Random quote             │",
-          "│  joke          Random programming joke  │",
           "│  cowsay <msg>  Cow says message         │",
           "│  tree          Show directory tree      │",
           "│  calc <expr>   Simple calculator        │",
           "│  ping <host>   Ping a host              │",
           "│  matrix        Enter the matrix         │",
-          "│  weather       Show weather             │",
           "│  banner <txt>  ASCII art banner         │",
           "└─────────────────────────────────────────┘",
         ]);
@@ -231,10 +231,6 @@ export function TerminalApp() {
         addOutput([quotes[Math.floor(Math.random() * quotes.length)]]);
         break;
 
-      case "joke":
-        addOutput([jokes[Math.floor(Math.random() * jokes.length)]]);
-        break;
-
       case "cowsay":
         const message = args.join(" ") || "Moo!";
         const border = "─".repeat(message.length + 2);
@@ -306,18 +302,6 @@ export function TerminalApp() {
         ]);
         break;
 
-      case "weather":
-        addOutput([
-          "┌──────────────────────────────────┐",
-          "│  🌤️  Weather in Matrix City       │",
-          "├──────────────────────────────────┤",
-          "│  Temperature: 22°C (72°F)        │",
-          "│  Condition: Partly Cloudy        │",
-          "│  Humidity: 45%                   │",
-          "│  Wind: 12 km/h NW                │",
-          "└──────────────────────────────────┘",
-        ]);
-        break;
 
       case "banner":
         const text = args.join(" ").toUpperCase() || "HELLO";
@@ -384,11 +368,30 @@ export function TerminalApp() {
     } else if (e.key === "Tab") {
       e.preventDefault();
       // Simple autocomplete for commands
-      const commands = ["help", "clear", "ls", "cd", "pwd", "cat", "whoami", "date", "echo", "neofetch", "history", "uname", "fortune", "joke", "cowsay", "tree", "calc", "ping", "matrix", "weather", "banner"];
+      const commands = ["help", "clear", "ls", "cd", "pwd", "cat", "whoami", "date", "echo", "neofetch", "history", "uname", "fortune", "cowsay", "tree", "calc", "ping", "matrix", "banner"];
       const match = commands.find(c => c.startsWith(input.toLowerCase()));
       if (match) setInput(match);
     }
   };
+
+  if (isMobile) {
+    return (
+      <AlertDialog open={true}>
+        <AlertDialogContent className="bg-black border-green-500 border-2">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-green-400 font-mono text-center">
+              ⚠️ Terminal no disponible
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-green-300 font-mono text-center">
+              El terminal solo está disponible en ordenadores de escritorio.
+              <br /><br />
+              Por favor, accede desde un PC o portátil para usar esta función.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+        </AlertDialogContent>
+      </AlertDialog>
+    );
+  }
 
   return (
     <div 
