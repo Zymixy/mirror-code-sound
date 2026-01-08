@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, memo, forwardRef, useRef, useEffect } f
 import { User, FolderOpen, Code, Terminal, Globe } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useWindowManager } from "@/hooks/useWindowManager";
-import { useDesktopSelection } from "@/hooks/useDesktopSelection";
+import { useDesktopGrid, type IconState } from "@/hooks/useDesktopGrid";
 import { Window } from "@/components/desktop/Window";
 import { Taskbar } from "@/components/desktop/Taskbar";
 import { StartMenu } from "@/components/desktop/StartMenu";
@@ -44,10 +44,10 @@ const apps: AppConfig[] = [
 
 const desktopApps = apps.slice(0, 4);
 
-const initialIconPositions = desktopApps.map((app, index) => ({
+// Initial grid positions for desktop icons (column 0, rows 0-3)
+const initialIconStates: IconState[] = desktopApps.map((app, index) => ({
   id: app.id,
-  x: 16,
-  y: 16 + index * 100,
+  gridPos: { col: 0, row: index },
 }));
 
 const APP_COMPONENTS: Record<string, React.ComponentType<any>> = {
@@ -83,19 +83,38 @@ const Index = () => {
   } = useWindowManager();
 
   const {
-    iconPositions,
-    selectedIcons,
+    icons,
+    selectedIds,
     selectionRect,
-    draggingIcon,
-    startSelection,
-    updateSelection,
-    endSelection,
+    isDragging,
+    draggingIconId,
+    setContainerSize,
     startIconDrag,
     updateIconDrag,
     endIconDrag,
+    startSelection,
+    updateSelection,
+    endSelection,
     selectIcon,
     clearSelection,
-  } = useDesktopSelection(initialIconPositions);
+    getIconDisplayPosition,
+  } = useDesktopGrid(initialIconStates);
+
+  // Update container size on mount and resize
+  useEffect(() => {
+    const updateSize = () => {
+      if (desktopRef.current) {
+        setContainerSize(
+          desktopRef.current.clientWidth,
+          desktopRef.current.clientHeight
+        );
+      }
+    };
+
+    updateSize();
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
+  }, [setContainerSize]);
 
   const handleContinue = useCallback(() => {
     document.documentElement.requestFullscreen?.().catch(() => {});
@@ -154,7 +173,7 @@ const Index = () => {
     setShowShutdown(false);
   }, []);
 
-  // Desktop selection handlers
+  // Desktop interaction handlers
   const handleDesktopMouseDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('[data-icon-id]')) return;
     if ((e.target as HTMLElement).closest('.window-container')) return;
@@ -175,7 +194,7 @@ const Index = () => {
       if (selectionRect) {
         updateSelection(e.clientX, e.clientY);
       }
-      if (draggingIcon) {
+      if (isDragging) {
         updateIconDrag(e.clientX, e.clientY);
       }
     };
@@ -188,7 +207,7 @@ const Index = () => {
         });
         endSelection(iconRects);
       }
-      if (draggingIcon) {
+      if (isDragging) {
         endIconDrag();
       }
     };
@@ -200,7 +219,7 @@ const Index = () => {
         e.preventDefault();
         updateSelection(touch.clientX, touch.clientY);
       }
-      if (draggingIcon) {
+      if (isDragging) {
         e.preventDefault();
         updateIconDrag(touch.clientX, touch.clientY);
       }
@@ -214,7 +233,7 @@ const Index = () => {
         });
         endSelection(iconRects);
       }
-      if (draggingIcon) {
+      if (isDragging) {
         endIconDrag();
       }
     };
@@ -232,7 +251,7 @@ const Index = () => {
       document.removeEventListener("touchend", handleTouchEnd);
       document.removeEventListener("touchcancel", handleTouchEnd);
     };
-  }, [selectionRect, draggingIcon, updateSelection, endSelection, updateIconDrag, endIconDrag]);
+  }, [selectionRect, isDragging, updateSelection, endSelection, updateIconDrag, endIconDrag]);
 
   const handleIconMouseDown = useCallback((e: React.MouseEvent, id: string) => {
     const el = iconRefsMap.current.get(id);
@@ -251,8 +270,10 @@ const Index = () => {
   }, [startIconDrag]);
 
   const handleIconClick = useCallback((e: React.MouseEvent, id: string) => {
-    selectIcon(id, e.ctrlKey || e.metaKey);
-  }, [selectIcon]);
+    if (!isDragging) {
+      selectIcon(id, e.ctrlKey || e.metaKey);
+    }
+  }, [selectIcon, isDragging]);
 
   const setIconRef = useCallback((id: string) => (el: HTMLButtonElement | null) => {
     if (el) {
@@ -316,7 +337,7 @@ const Index = () => {
       )}
 
       {desktopApps.map((app) => {
-        const pos = iconPositions.find(p => p.id === app.id) || { x: 16, y: 16 };
+        const pos = getIconDisplayPosition(app.id);
         return (
           <DesktopIcon
             key={app.id}
@@ -325,8 +346,8 @@ const Index = () => {
             icon={app.icon}
             label={app.name}
             position={pos}
-            isSelected={selectedIcons.has(app.id)}
-            isDragging={draggingIcon === app.id}
+            isSelected={selectedIds.has(app.id)}
+            isDragging={draggingIconId === app.id || (isDragging && selectedIds.has(app.id))}
             onDoubleClick={() => handleOpenApp(app)}
             onMouseDown={handleIconMouseDown}
             onTouchStart={handleIconTouchStart}
