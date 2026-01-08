@@ -1,11 +1,13 @@
-import { useState, useCallback, useMemo, memo, forwardRef } from "react";
+import { useState, useCallback, useMemo, memo, forwardRef, useRef, useEffect } from "react";
 import { User, FolderOpen, Code, Terminal, Globe } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useWindowManager } from "@/hooks/useWindowManager";
+import { useDesktopSelection } from "@/hooks/useDesktopSelection";
 import { Window } from "@/components/desktop/Window";
 import { Taskbar } from "@/components/desktop/Taskbar";
 import { StartMenu } from "@/components/desktop/StartMenu";
 import { DesktopIcon } from "@/components/desktop/DesktopIcon";
+import { SelectionRectangle } from "@/components/desktop/SelectionRectangle";
 import { BootScreen } from "@/components/desktop/BootScreen";
 import { ShutdownDialog } from "@/components/desktop/ShutdownDialog";
 import { ShutdownScreen } from "@/components/desktop/ShutdownScreen";
@@ -42,6 +44,12 @@ const apps: AppConfig[] = [
 
 const desktopApps = apps.slice(0, 4);
 
+const initialIconPositions = desktopApps.map((app, index) => ({
+  id: app.id,
+  x: 16,
+  y: 16 + index * 100,
+}));
+
 const APP_COMPONENTS: Record<string, React.ComponentType<any>> = {
   about: AboutApp,
   projects: ProjectsApp,
@@ -59,6 +67,9 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showWelcome, setShowWelcome] = useState(true);
 
+  const desktopRef = useRef<HTMLDivElement>(null);
+  const iconRefsMap = useRef<Map<string, HTMLButtonElement>>(new Map());
+
   const {
     windows,
     focusedWindow,
@@ -70,6 +81,21 @@ const Index = () => {
     updatePosition,
     updateSize,
   } = useWindowManager();
+
+  const {
+    iconPositions,
+    selectedIcons,
+    selectionRect,
+    draggingIcon,
+    startSelection,
+    updateSelection,
+    endSelection,
+    startIconDrag,
+    updateIconDrag,
+    endIconDrag,
+    selectIcon,
+    clearSelection,
+  } = useDesktopSelection(initialIconPositions);
 
   const handleContinue = useCallback(() => {
     document.documentElement.requestFullscreen?.().catch(() => {});
@@ -128,6 +154,114 @@ const Index = () => {
     setShowShutdown(false);
   }, []);
 
+  // Desktop selection handlers
+  const handleDesktopMouseDown = useCallback((e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('[data-icon-id]')) return;
+    if ((e.target as HTMLElement).closest('.window-container')) return;
+    clearSelection();
+    startSelection(e.clientX, e.clientY);
+  }, [clearSelection, startSelection]);
+
+  const handleDesktopTouchStart = useCallback((e: React.TouchEvent) => {
+    if ((e.target as HTMLElement).closest('[data-icon-id]')) return;
+    if ((e.target as HTMLElement).closest('.window-container')) return;
+    if (e.touches.length !== 1) return;
+    clearSelection();
+    startSelection(e.touches[0].clientX, e.touches[0].clientY);
+  }, [clearSelection, startSelection]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (selectionRect) {
+        updateSelection(e.clientX, e.clientY);
+      }
+      if (draggingIcon) {
+        updateIconDrag(e.clientX, e.clientY);
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (selectionRect) {
+        const iconRects = new Map<string, DOMRect>();
+        iconRefsMap.current.forEach((el, id) => {
+          if (el) iconRects.set(id, el.getBoundingClientRect());
+        });
+        endSelection(iconRects);
+      }
+      if (draggingIcon) {
+        endIconDrag();
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      if (selectionRect) {
+        e.preventDefault();
+        updateSelection(touch.clientX, touch.clientY);
+      }
+      if (draggingIcon) {
+        e.preventDefault();
+        updateIconDrag(touch.clientX, touch.clientY);
+      }
+    };
+
+    const handleTouchEnd = () => {
+      if (selectionRect) {
+        const iconRects = new Map<string, DOMRect>();
+        iconRefsMap.current.forEach((el, id) => {
+          if (el) iconRects.set(id, el.getBoundingClientRect());
+        });
+        endSelection(iconRects);
+      }
+      if (draggingIcon) {
+        endIconDrag();
+      }
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
+    document.addEventListener("touchend", handleTouchEnd);
+    document.addEventListener("touchcancel", handleTouchEnd);
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", handleTouchEnd);
+      document.removeEventListener("touchcancel", handleTouchEnd);
+    };
+  }, [selectionRect, draggingIcon, updateSelection, endSelection, updateIconDrag, endIconDrag]);
+
+  const handleIconMouseDown = useCallback((e: React.MouseEvent, id: string) => {
+    const el = iconRefsMap.current.get(id);
+    if (el) {
+      startIconDrag(id, e.clientX, e.clientY, el.getBoundingClientRect());
+    }
+  }, [startIconDrag]);
+
+  const handleIconTouchStart = useCallback((e: React.TouchEvent, id: string) => {
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const el = iconRefsMap.current.get(id);
+    if (el) {
+      startIconDrag(id, touch.clientX, touch.clientY, el.getBoundingClientRect());
+    }
+  }, [startIconDrag]);
+
+  const handleIconClick = useCallback((e: React.MouseEvent, id: string) => {
+    selectIcon(id, e.ctrlKey || e.metaKey);
+  }, [selectIcon]);
+
+  const setIconRef = useCallback((id: string) => (el: HTMLButtonElement | null) => {
+    if (el) {
+      iconRefsMap.current.set(id, el);
+    } else {
+      iconRefsMap.current.delete(id);
+    }
+  }, []);
+
   const windowsWithIcons = useMemo(() => 
     windows.map(win => ({
       ...win,
@@ -164,19 +298,42 @@ const Index = () => {
   if (isBooting) return <BootScreen onComplete={handleBootComplete} />;
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-background">
+    <div 
+      ref={desktopRef}
+      className="h-screen w-screen overflow-hidden bg-background"
+      onMouseDown={handleDesktopMouseDown}
+      onTouchStart={handleDesktopTouchStart}
+    >
       <RandomAdsPopup />
 
-      <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
-        {desktopApps.map((app) => (
+      {selectionRect && (
+        <SelectionRectangle
+          startX={selectionRect.startX}
+          startY={selectionRect.startY}
+          endX={selectionRect.endX}
+          endY={selectionRect.endY}
+        />
+      )}
+
+      {desktopApps.map((app) => {
+        const pos = iconPositions.find(p => p.id === app.id) || { x: 16, y: 16 };
+        return (
           <DesktopIcon
             key={app.id}
+            ref={setIconRef(app.id)}
+            id={app.id}
             icon={app.icon}
             label={app.name}
+            position={pos}
+            isSelected={selectedIcons.has(app.id)}
+            isDragging={draggingIcon === app.id}
             onDoubleClick={() => handleOpenApp(app)}
+            onMouseDown={handleIconMouseDown}
+            onTouchStart={handleIconTouchStart}
+            onClick={handleIconClick}
           />
-        ))}
-      </div>
+        );
+      })}
 
       {windows.map((win) => (
         <Window
