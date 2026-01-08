@@ -53,20 +53,19 @@ export const DesktopIcon = memo(forwardRef<HTMLButtonElement, DesktopIconProps>(
       onTouchStart={handleTouchStart}
       onClick={handleClick}
       className={cn(
-        "absolute flex flex-col items-center justify-start gap-1 p-2 w-[80px] h-[90px] rounded transition-all duration-75 group select-none touch-none",
-        isSelected ? "bg-primary/25 ring-1 ring-primary/50" : "hover:bg-foreground/10",
-        isDragging && "opacity-80 scale-105 z-50 shadow-lg"
+        "absolute flex flex-col items-center gap-1 p-2 w-20 rounded-lg transition-colors group select-none touch-none",
+        isSelected ? "bg-primary/30 ring-1 ring-primary" : "hover:bg-foreground/10",
+        isDragging && "opacity-70 cursor-grabbing"
       )}
       style={{
         left: position.x,
         top: position.y,
-        transition: isDragging ? 'none' : 'left 0.15s ease-out, top 0.15s ease-out',
       }}
     >
-      <div className="w-12 h-12 flex items-center justify-center">
-        <Icon className="w-10 h-10 text-primary drop-shadow-lg" />
+      <div className="w-10 h-10 flex items-center justify-center group-hover:scale-110 transition-transform">
+        <Icon className="w-8 h-8 text-primary drop-shadow-lg" />
       </div>
-      <span className="text-[11px] text-center text-foreground drop-shadow-md leading-tight line-clamp-2 px-1">
+      <span className="text-xs text-center text-foreground drop-shadow-md leading-tight line-clamp-2">
         {label}
       </span>
     </button>
